@@ -1,0 +1,505 @@
+ Network Segmentation for Defense
+Objectives
+By the end of this lab, students will be able to:
+
+Understand network segmentation principles and security zoning concepts
+Use Nmap for network discovery and segmentation analysis
+Implement Python-based security rule management systems
+Configure iptables rules to enforce network isolation policies
+Analyze network traffic with Wireshark to verify segmentation effectiveness
+Prerequisites
+Basic Linux command line proficiency
+Understanding of IP addressing and subnets
+Familiarity with Python programming fundamentals
+Basic knowledge of TCP/IP protocols
+Root/sudo access to practice environment
+Lab Environment
+Al Nafi Cloud Machine Setup: Click Start Lab to access your pre-configured Ubuntu 20.04 LTS environment. All required tools are pre-installed. No additional setup needed.
+
+System Requirements:
+
+Ubuntu 20.04 LTS or newer
+Minimum 4GB RAM
+Root/sudo privileges
+Task 1: Create Virtual Network Segments
+Step 1.1: Install Required Tools
+# Update system and install tools
+sudo apt update
+sudo apt install -y nmap python3 python3-pip wireshark tshark net-tools iptables-persistent
+
+# Verify installations
+nmap --version
+python3 --version
+Step 1.2: Create Network Segments
+Create three isolated network segments: DMZ, Internal, and Guest zones.
+
+# Create virtual bridges for network segments
+sudo ip link add name dmz-br type bridge
+sudo ip link add name internal-br type bridge
+sudo ip link add name guest-br type bridge
+
+# Assign IP addresses to segments
+sudo ip addr add 192.168.10.1/24 dev dmz-br
+sudo ip addr add 192.168.20.1/24 dev internal-br
+sudo ip addr add 192.168.30.1/24 dev guest-br
+
+# Activate interfaces
+sudo ip link set dmz-br up
+sudo ip link set internal-br up
+sudo ip link set guest-br up
+
+# Create network namespaces for isolation
+sudo ip netns add dmz-zone
+sudo ip netns add internal-zone
+sudo ip netns add guest-zone
+
+# Create veth pairs for connectivity
+sudo ip link add dmz-veth type veth peer name dmz-veth-br
+sudo ip link add internal-veth type veth peer name internal-veth-br
+sudo ip link add guest-veth type veth peer name guest-veth-br
+
+# Move interfaces to namespaces
+sudo ip link set dmz-veth netns dmz-zone
+sudo ip link set internal-veth netns internal-zone
+sudo ip link set guest-veth netns guest-zone
+
+# Connect to bridges
+sudo ip link set dmz-veth-br master dmz-br
+sudo ip link set internal-veth-br master internal-br
+sudo ip link set guest-veth-br master guest-br
+
+# Configure namespace IPs
+sudo ip netns exec dmz-zone ip addr add 192.168.10.10/24 dev dmz-veth
+sudo ip netns exec internal-zone ip addr add 192.168.20.10/24 dev internal-veth
+sudo ip netns exec guest-zone ip addr add 192.168.30.10/24 dev guest-veth
+
+# Activate namespace interfaces
+sudo ip netns exec dmz-zone ip link set dmz-veth up
+sudo ip netns exec internal-zone ip link set internal-veth up
+sudo ip netns exec guest-zone ip link set guest-veth up
+sudo ip link set dmz-veth-br up
+sudo ip link set internal-veth-br up
+sudo ip link set guest-veth-br up
+
+# Add default routes in namespaces
+sudo ip netns exec dmz-zone ip route add default via 192.168.10.1
+sudo ip netns exec internal-zone ip route add default via 192.168.20.1
+sudo ip netns exec guest-zone ip route add default via 192.168.30.1
+Step 1.3: Perform Network Discovery with Nmap
+# Scan each network segment
+echo "=== DMZ Network Scan ==="
+nmap -sn 192.168.10.0/24
+
+echo "=== Internal Network Scan ==="
+nmap -sn 192.168.20.0/24
+
+echo "=== Guest Network Scan ==="
+nmap -sn 192.168.30.0/24
+
+# Detailed service detection
+nmap -sV -O 192.168.10.10 192.168.20.10 192.168.30.10
+
+# Save network map
+nmap -sn 192.168.10.0/24 192.168.20.0/24 192.168.30.0/24 -oN network_map.txt
+Step 1.4: Test Initial Connectivity
+# Test cross-segment connectivity (should work before rules applied)
+echo "Testing DMZ to Internal:"
+sudo ip netns exec dmz-zone ping -c 2 192.168.20.10
+
+echo "Testing Guest to Internal:"
+sudo ip netns exec guest-zone ping -c 2 192.168.20.10
+
+echo "Testing Guest to DMZ:"
+sudo ip netns exec guest-zone ping -c 2 192.168.10.10
+Task 2: Develop Python Security Rule Engine
+Step 2.1: Create Security Rule Manager (Starter Template)
+Create security_rule_engine.py with the following starter code:
+
+#!/usr/bin/env python3
+
+import subprocess
+import json
+from datetime import datetime
+import logging
+
+class NetworkSegmentManager:
+    def __init__(self):
+        """Initialize network segment manager with segment definitions."""
+        self.segments = {
+            'dmz': {
+                'network': '192.168.10.0/24',
+                'gateway': '192.168.10.1',
+                'security_level': 'medium'
+            },
+            'internal': {
+                'network': '192.168.20.0/24',
+                'gateway': '192.168.20.1',
+                'security_level': 'high'
+            },
+            'guest': {
+                'network': '192.168.30.0/24',
+                'gateway': '192.168.30.1',
+                'security_level': 'low'
+            }
+        }
+        self.security_rules = []
+        self.setup_logging()
+    
+    def setup_logging(self):
+        """Configure logging to file and console."""
+        # TODO: Configure logging with INFO level
+        # TODO: Add file handler for 'security_rules.log'
+        # TODO: Add console handler
+        pass
+    
+    def add_security_rule(self, rule_name, source_segment, dest_segment, 
+                         action, protocol='tcp', port=None):
+        """
+        Add a security rule between network segments.
+        
+        Args:
+            rule_name: Descriptive name for the rule
+            source_segment: Source segment name (dmz/internal/guest)
+            dest_segment: Destination segment name
+            action: ALLOW, DENY, or LOG
+            protocol: tcp, udp, icmp
+            port: Destination port number (optional)
+        
+        Returns:
+            Dictionary containing the rule definition
+        """
+        # TODO: Create rule dictionary with all parameters
+        # TODO: Add timestamp to rule
+        # TODO: Append to self.security_rules list
+        # TODO: Log the rule addition
+        # TODO: Return the rule dictionary
+        pass
+    
+    def generate_iptables_rules(self):
+        """
+        Generate iptables commands from security policies.
+        
+        Returns:
+            List of iptables command strings
+        """
+        iptables_rules = []
+        
+        # TODO: Add default deny rules between all segments
+        # TODO: Iterate through self.security_rules
+        # TODO: Generate appropriate iptables command for each rule
+        # TODO: Handle ALLOW, DENY, and LOG actions
+        # TODO: Include port specifications when provided
+        
+        return iptables_rules
+    
+    def apply_security_rules(self):
+        """Apply generated iptables rules to the system."""
+        # TODO: Enable IP forwarding using sysctl
+        # TODO: Clear existing FORWARD chain rules
+        # TODO: Get rules from generate_iptables_rules()
+        # TODO: Execute each iptables command using subprocess
+        # TODO: Log success or failure for each rule
+        pass
+    
+    def test_connectivity(self, source_segment, dest_segment, dest_ip):
+        """
+        Test connectivity between segments using ping.
+        
+        Args:
+            source_segment: Source segment name
+            dest_segment: Destination segment name
+            dest_ip: IP address to test
+        
+        Returns:
+            Boolean indicating if connection succeeded
+        """
+        # TODO: Get source zone from self.segments
+        # TODO: Execute ping command in source namespace
+        # TODO: Return True if ping succeeds, False otherwise
+        # TODO: Log the test result
+        pass
+    
+    def generate_security_report(self):
+        """
+        Generate comprehensive security report.
+        
+        Returns:
+            Dictionary containing report data
+        """
+        report = {
+            'timestamp': datetime.now().isoformat(),
+            'segments': self.segments,
+            'active_rules': len(self.security_rules),
+            'rules': self.security_rules,
+            'connectivity_matrix': {}
+        }
+        
+        # TODO: Test connectivity between all segment pairs
+        # TODO: Populate connectivity_matrix with results
+        # TODO: Add test results to report
+        
+        return report
+    
+    def save_configuration(self, filename='network_config.json'):
+        """Save configuration to JSON file."""
+        # TODO: Create config dictionary with segments and rules
+        # TODO: Write to file using json.dump()
+        # TODO: Log the save operation
+        pass
+
+def main():
+    """Main execution function."""
+    nsm = NetworkSegmentManager()
+    
+    print("=== Network Segmentation Security Rule Engine ===")
+    
+    # TODO: Add security rules for your network policy
+    # Example: Allow HTTP from guest to DMZ
+    # nsm.add_security_rule("guest_to_dmz_http", "guest", "dmz", "ALLOW", "tcp", 80)
+    
+    # TODO: Generate iptables rules
+    # TODO: Apply rules to system
+    # TODO: Generate and display security report
+    # TODO: Save configuration
+    
+    print("Configuration complete!")
+
+if __name__ == "__main__":
+    main()
+Step 2.2: Create Network Monitor (Starter Template)
+Create network_monitor.py:
+
+#!/usr/bin/env python3
+
+import subprocess
+import time
+import re
+import json
+from datetime import datetime
+
+class NetworkSegmentMonitor:
+    def __init__(self):
+        """Initialize network monitoring system."""
+        self.monitoring = False
+        self.violations = []
+        self.traffic_stats = {}
+    
+    def start_monitoring(self, duration=60):
+        """
+        Start monitoring network traffic.
+        
+        Args:
+            duration: Monitoring duration in seconds
+        
+        Returns:
+            Monitoring report dictionary
+        """
+        # TODO: Set monitoring flag to True
+        # TODO: Start background thread for log monitoring
+        # TODO: Sleep for specified duration
+        # TODO: Stop monitoring and generate report
+        pass
+    
+    def _parse_iptables_log(self, log_line):
+        """
+        Parse iptables log entry.
+        
+        Args:
+            log_line: Raw log line from system logs
+        
+        Returns:
+            Dictionary with parsed violation data or None
+        """
+        # TODO: Use regex to extract SRC, DST, PROTO, DPT
+        # TODO: Create violation dictionary with timestamp
+        # TODO: Return parsed data or None if parsing fails
+        pass
+    
+    def test_segmentation_rules(self):
+        """
+        Test network segmentation effectiveness.
+        
+        Returns:
+            List of test result dictionaries
+        """
+        test_cases = [
+            {
+                'name': 'Guest to Internal (Should be blocked)',
+                'source_zone': 'guest-zone',
+                'dest_ip': '192.168.20.10',
+                'expected': False
+            },
+            # TODO: Add more test cases
+        ]
+        
+        test_results = []
+        
+        # TODO: Iterate through test cases
+        # TODO: Execute ping test for each case
+        # TODO: Compare actual result with expected
+        # TODO: Record pass/fail status
+        
+        return test_results
+    
+    def generate_monitoring_report(self):
+        """Generate comprehensive monitoring report."""
+        # TODO: Create report dictionary with timestamp
+        # TODO: Include violations count and details
+        # TODO: Add traffic statistics
+        # TODO: Include segmentation test results
+        pass
+    
+    def save_report(self, report, filename='monitoring_report.json'):
+        """Save monitoring report to file."""
+        # TODO: Write report to JSON file
+        # TODO: Print confirmation message
+        pass
+
+def main():
+    """Main execution function."""
+    print("=== Network Segmentation Monitor ===")
+    
+    monitor = NetworkSegmentMonitor()
+    
+    # TODO: Start monitoring for specified duration
+    # TODO: Display report summary
+    # TODO: Save detailed report to file
+    
+    print("Monitoring completed!")
+
+if __name__ == "__main__":
+    main()
+Step 2.3: Implement and Test Your Security Rules
+# Make scripts executable
+chmod +x security_rule_engine.py network_monitor.py
+
+# Complete the TODO sections in both Python files
+# Then run the security rule engine
+python3 security_rule_engine.py
+
+# Verify iptables rules
+sudo iptables -L FORWARD -n -v
+
+# Check IP forwarding status
+cat /proc/sys/net/ipv4/ip_forward
+Task 3: Analyze Traffic with Wireshark
+Step 3.1: Start Network Services
+# Start HTTP servers in each segment
+sudo ip netns exec dmz-zone python3 -m http.server 80 &
+sudo ip netns exec internal-zone python3 -m http.server 8080 &
+sudo ip netns exec guest-zone python3 -m http.server 8090 &
+
+# Save process IDs for cleanup
+echo $! > service_pids.txt
+Step 3.2: Capture Network Traffic
+# Create capture directory
+mkdir -p captures && cd captures
+
+# Start packet capture on DMZ bridge (60 seconds)
+sudo tshark -i dmz-br -w dmz_traffic.pcap -a duration:60 &
+
+# Start capture on Internal bridge
+sudo tshark -i internal-br -w internal_traffic.pcap -a duration:60 &
+
+# Start capture on Guest bridge
+sudo tshark -i guest-br -w guest_traffic.pcap -a duration:60 &
+Step 3.3: Generate Test Traffic
+# Test allowed traffic: Guest to DMZ HTTP
+sudo ip netns exec guest-zone curl -m 5 http://192.168.10.10/
+
+# Test blocked traffic: Guest to Internal
+sudo ip netns exec guest-zone curl -m 5 http://192.168.20.10:8080/
+
+# Test allowed traffic: Internal to DMZ
+sudo ip netns exec internal-zone curl -m 5 http://192.168.10.10/
+
+# Generate multiple connection attempts
+for i in {1..5}; do
+    sudo ip netns exec guest-zone ping -c 1 192.168.20.10
+    sleep 1
+done
+
+# Wait for captures to complete
+wait
+Step 3.4: Analyze Captured Traffic
+# Analyze DMZ traffic
+echo "=== DMZ Traffic Analysis ==="
+tshark -r dmz_traffic.pcap -q -z conv,ip
+
+# Analyze blocked attempts
+echo "=== Blocked Connection Attempts ==="
+tshark -r guest_traffic.pcap -Y "tcp.flags.syn==1 && tcp.flags.ack==0"
+
+# Count packets by protocol
+echo "=== Protocol Distribution ==="
+tshark -r dmz_traffic.pcap -q -z io,phs
+
+# Display HTTP requests
+echo "=== HTTP Requests ==="
+tshark -r dmz_traffic.pcap -Y "http.request" -T fields -e ip.src -e http.request.uri
+
+# Open in Wireshark GUI for detailed analysis
+wireshark dmz_traffic.pcap &
+Step 3.5: Verify Segmentation Effectiveness
+# Run your network monitor
+cd ..
+python3 network_monitor.py
+
+# Check iptables statistics
+sudo iptables -L FORWARD -n -v
+
+# Review system logs for blocked attempts
+sudo grep "SEGMENT_LOG" /var/log/kern.log | tail -20
+
+# Generate final security report
+python3 -c "
+from security_rule_engine import NetworkSegmentManager
+nsm = NetworkSegmentManager()
+report = nsm.generate_security_report()
+print('Connectivity Matrix:')
+for src, dests in report['connectivity_matrix'].items():
+    for dst, allowed in dests.items():
+        print(f'{src} -> {dst}: {\"ALLOWED\" if allowed else \"BLOCKED\"}')
+"
+Expected Outcomes
+After completing this lab, you should have:
+
+Three isolated network segments (DMZ, Internal, Guest)
+Functional Python security rule engine managing iptables rules
+Network monitoring system detecting segmentation violations
+Packet captures demonstrating traffic filtering
+Security report showing connectivity matrix between segments
+Verified that Guest network cannot access Internal network
+Confirmed that allowed traffic (Guest to DMZ HTTP) works correctly
+Troubleshooting Tips
+Issue: Cannot ping between namespaces
+
+Solution: Verify IP forwarding is enabled: sudo sysctl -w net.ipv4.ip_forward=1
+Check that interfaces are up: ip link show
+Verify routes in namespaces: sudo ip netns exec <zone> ip route
+Issue: Iptables rules not blocking traffic
+
+Solution: Check rule order with sudo iptables -L FORWARD -n -v --line-numbers
+Ensure FORWARD chain default policy: sudo iptables -P FORWARD DROP
+Verify rules are in correct chain (FORWARD, not INPUT/OUTPUT)
+Issue: Wireshark/tshark permission denied
+
+Solution: Add user to wireshark group: sudo usermod -a -G wireshark $USER
+Log out and back in for group changes to take effect
+Run with sudo if necessary: sudo tshark -i <interface>
+Issue: Python scripts fail with import errors
+
+Solution: Install required packages: pip3 install <package-name>
+Verify Python 3 is being used: python3 --version
+Check script has execute permissions: chmod +x script.py
+Conclusion
+This lab demonstrated network segmentation as a critical defense-in-depth strategy. You created isolated network zones, implemented security policies using iptables, developed Python tools for rule management and monitoring, and verified segmentation effectiveness using Wireshark. These skills are essential for designing secure network architectures that limit lateral movement and contain security breaches.
+
+Key takeaways:
+
+Network segmentation reduces attack surface and limits breach impact
+Proper firewall rules enforce security policies between zones
+Automated monitoring detects policy violations
+Traffic analysis validates segmentation effectiveness
+Defense-in-depth requires multiple security layers
+Continue practicing by implementing more complex segmentation scenarios, adding application-layer filtering, and integrating with intrusion detection systems.
