@@ -1,0 +1,585 @@
+Router and Firewall Hardening
+Objectives
+By the end of this lab, students will be able to:
+
+Configure centralized authentication using FreeRADIUS for network devices
+Implement automated firewall rules using Python and iptables
+Apply security hardening best practices to network infrastructure
+Test and validate firewall configurations
+Understand defense-in-depth strategies for network security
+Prerequisites
+Students should have:
+
+Basic Linux command line proficiency
+Understanding of TCP/IP networking fundamentals
+Familiarity with Python programming basics
+Knowledge of firewall concepts and network security principles
+Lab Environment
+Al Nafi provides pre-configured Linux cloud machines. Click Start Lab to access your environment with:
+
+Ubuntu 22.04 LTS
+Python 3.10+
+FreeRADIUS and iptables pre-installed
+All necessary development tools
+No additional setup required.
+
+Task 1: Configure Centralized Authentication
+Overview
+Implement FreeRADIUS as a centralized authentication system for network device access control.
+
+Step 1: Configure FreeRADIUS Server
+Install and start the RADIUS service:
+
+# Update and install FreeRADIUS
+sudo apt update
+sudo apt install freeradius freeradius-utils -y
+
+# Start the service
+sudo systemctl start freeradius
+sudo systemctl enable freeradius
+Step 2: Define RADIUS Clients
+Edit the clients configuration:
+
+sudo nano /etc/freeradius/3.0/clients.conf
+Add this configuration at the end:
+
+client router-lab {
+    ipaddr = 127.0.0.1
+    secret = Lab2SecureKey2024
+    require_message_authenticator = no
+    nas_type = cisco
+}
+Step 3: Create User Accounts
+Edit the users file:
+
+sudo nano /etc/freeradius/3.0/users
+Add these user definitions at the top:
+
+netadmin Cleartext-Password := "SecureAdmin123!"
+    Service-Type = Administrative-User,
+    Cisco-AVPair = "shell:priv-lvl=15"
+
+netoper Cleartext-Password := "OperPass456!"
+    Service-Type = NAS-Prompt-User,
+    Cisco-AVPair = "shell:priv-lvl=1"
+
+secanalyst Cleartext-Password := "AnalystKey789!"
+    Service-Type = Administrative-User,
+    Cisco-AVPair = "shell:priv-lvl=10"
+Step 4: Test Authentication
+Restart FreeRADIUS and test user authentication:
+
+# Restart service
+sudo systemctl restart freeradius
+
+# Test authentication for each user
+radtest netadmin "SecureAdmin123!" 127.0.0.1 1812 Lab2SecureKey2024
+radtest netoper "OperPass456!" 127.0.0.1 1812 Lab2SecureKey2024
+radtest secanalyst "AnalystKey789!" 127.0.0.1 1812 Lab2SecureKey2024
+
+# Test invalid credentials
+radtest invaliduser "wrongpass" 127.0.0.1 1812 Lab2SecureKey2024
+Step 5: Create Router Configuration Simulator
+Create a directory and Python script:
+
+mkdir -p ~/lab2-hardening
+cd ~/lab2-hardening
+nano router_config_simulator.py
+Add this starter template:
+
+#!/usr/bin/env python3
+"""
+Router Configuration Simulator
+Students: Complete the functions to generate hardened router configurations
+"""
+
+import subprocess
+import sys
+
+class RouterConfigSimulator:
+    def __init__(self):
+        self.config = {
+            'hostname': 'Lab-Router-01',
+            'radius_server': '127.0.0.1',
+            'radius_key': 'Lab2SecureKey2024'
+        }
+    
+    def generate_base_config(self):
+        """
+        Generate basic router hardening configuration.
+        
+        TODO: Create a list of configuration commands including:
+        - Hostname configuration
+        - RADIUS server setup
+        - AAA authentication model
+        - SSH hardening (version 2, timeout settings)
+        - Disable unnecessary services (SNMP, source routing)
+        - Console and VTY line security
+        
+        Returns:
+            list: Configuration commands as strings
+        """
+        config_lines = []
+        # TODO: Add configuration commands
+        return config_lines
+    
+    def test_radius_connectivity(self):
+        """
+        Test RADIUS server connectivity using radtest.
+        
+        TODO: Use subprocess to run radtest command
+        TODO: Parse output to determine success/failure
+        TODO: Return True if authentication succeeds
+        
+        Returns:
+            bool: True if RADIUS test succeeds
+        """
+        # TODO: Implement RADIUS connectivity test
+        pass
+    
+    def save_configuration(self, filename="router_config.txt"):
+        """
+        Save generated configuration to file.
+        
+        TODO: Write configuration lines to file
+        TODO: Add error handling
+        
+        Args:
+            filename: Output file path
+        """
+        # TODO: Implement configuration save
+        pass
+    
+    def display_summary(self):
+        """
+        Display configuration summary.
+        
+        TODO: Print key security settings applied
+        """
+        # TODO: Implement summary display
+        pass
+
+def main():
+    """Main execution function"""
+    router = RouterConfigSimulator()
+    
+    # TODO: Call methods to test, generate, and save configuration
+    # TODO: Display results
+    
+    return True
+
+if __name__ == "__main__":
+    sys.exit(0 if main() else 1)
+Run your completed script:
+
+chmod +x router_config_simulator.py
+python3 router_config_simulator.py
+Task 2: Implement Firewall Automation
+Overview
+Create Python scripts to automate iptables firewall configuration with security hardening rules.
+
+Step 1: Initialize Firewall Environment
+Clear existing rules and set secure defaults:
+
+# Clear all existing rules
+sudo iptables -F
+sudo iptables -X
+sudo iptables -t nat -F
+sudo iptables -t nat -X
+
+# Set default policies
+sudo iptables -P INPUT DROP
+sudo iptables -P FORWARD DROP
+sudo iptables -P OUTPUT ACCEPT
+Step 2: Create Firewall Management Script
+Create the main firewall automation script:
+
+nano firewall_manager.py
+Add this starter template:
+
+#!/usr/bin/env python3
+"""
+Firewall Management System
+Students: Complete the functions to implement comprehensive firewall rules
+"""
+
+import subprocess
+import sys
+from datetime import datetime
+
+class FirewallManager:
+    def __init__(self):
+        self.rules_applied = []
+        self.log_file = "firewall_operations.log"
+    
+    def log_operation(self, operation, details=""):
+        """
+        Log firewall operations to file.
+        
+        TODO: Write timestamped log entries
+        
+        Args:
+            operation: Description of operation
+            details: Additional details
+        """
+        # TODO: Implement logging
+        pass
+    
+    def execute_command(self, command, description=""):
+        """
+        Execute iptables command safely.
+        
+        TODO: Use subprocess to run command
+        TODO: Capture output and errors
+        TODO: Log the operation
+        TODO: Return success status and output
+        
+        Args:
+            command: Shell command to execute
+            description: Human-readable description
+            
+        Returns:
+            tuple: (success_bool, output_string)
+        """
+        # TODO: Implement command execution
+        pass
+    
+    def clear_all_rules(self):
+        """
+        Clear all existing firewall rules.
+        
+        TODO: Flush all chains (filter, nat, mangle tables)
+        TODO: Delete user-defined chains
+        """
+        # TODO: Implement rule clearing
+        pass
+    
+    def set_default_policies(self):
+        """
+        Set secure default policies.
+        
+        TODO: Set INPUT to DROP
+        TODO: Set FORWARD to DROP
+        TODO: Set OUTPUT to ACCEPT
+        """
+        # TODO: Implement default policies
+        pass
+    
+    def allow_loopback(self):
+        """
+        Allow loopback interface traffic.
+        
+        TODO: Add rules to allow traffic on lo interface
+        """
+        # TODO: Implement loopback rules
+        pass
+    
+    def allow_established_connections(self):
+        """
+        Allow established and related connections.
+        
+        TODO: Add stateful firewall rule for ESTABLISHED,RELATED
+        """
+        # TODO: Implement stateful rules
+        pass
+    
+    def configure_ssh_access(self, port=22):
+        """
+        Configure SSH access with rate limiting.
+        
+        TODO: Implement SSH rate limiting (prevent brute force)
+        TODO: Allow SSH from specific networks
+        TODO: Use recent module for connection tracking
+        
+        Args:
+            port: SSH port number
+        """
+        # TODO: Implement SSH rules with rate limiting
+        pass
+    
+    def configure_web_services(self, http_port=80, https_port=443):
+        """
+        Configure web service access.
+        
+        TODO: Allow HTTP and HTTPS traffic
+        
+        Args:
+            http_port: HTTP port number
+            https_port: HTTPS port number
+        """
+        # TODO: Implement web service rules
+        pass
+    
+    def block_common_attacks(self):
+        """
+        Implement rules to block common attacks.
+        
+        TODO: Block invalid packets
+        TODO: Block NULL packets
+        TODO: Block SYN flood attacks
+        TODO: Block XMAS packets
+        TODO: Limit ICMP (ping) requests
+        """
+        # TODO: Implement attack prevention rules
+        pass
+    
+    def save_rules(self):
+        """
+        Save current iptables rules persistently.
+        
+        TODO: Use iptables-save to persist rules
+        TODO: Use netfilter-persistent for automatic loading
+        """
+        # TODO: Implement rule persistence
+        pass
+    
+    def display_current_rules(self):
+        """
+        Display current firewall rules.
+        
+        TODO: Execute iptables -L -n -v
+        TODO: Format and display output
+        """
+        # TODO: Implement rule display
+        pass
+    
+    def generate_summary(self):
+        """
+        Generate summary of applied rules.
+        
+        TODO: Display count and list of rules applied
+        """
+        # TODO: Implement summary generation
+        pass
+
+def main():
+    """Main execution function"""
+    fw = FirewallManager()
+    
+    # TODO: Clear existing rules
+    # TODO: Set default policies
+    # TODO: Configure basic connectivity (loopback, established)
+    # TODO: Configure services (SSH, web)
+    # TODO: Implement attack prevention
+    # TODO: Save rules
+    # TODO: Display results
+    
+    return True
+
+if __name__ == "__main__":
+    try:
+        success = main()
+        sys.exit(0 if success else 1)
+    except KeyboardInterrupt:
+        print("\nInterrupted by user")
+        sys.exit(1)
+Step 3: Create Custom Security Rules
+Create an additional script for advanced rules:
+
+nano custom_security_rules.py
+Add this template:
+
+#!/usr/bin/env python3
+"""
+Custom Security Rules
+Students: Implement advanced firewall rules
+"""
+
+import subprocess
+
+class CustomSecurityRules:
+    def __init__(self):
+        self.custom_rules = []
+    
+    def execute_rule(self, command, description):
+        """
+        Execute a single firewall rule.
+        
+        TODO: Run command and track success
+        
+        Args:
+            command: iptables command
+            description: Rule description
+            
+        Returns:
+            bool: Success status
+        """
+        # TODO: Implement rule execution
+        pass
+    
+    def block_suspicious_ranges(self):
+        """
+        Block traffic from suspicious IP ranges.
+        
+        TODO: Define list of IP ranges to block
+        TODO: Create DROP rules for each range
+        """
+        # TODO: Implement geo-blocking
+        pass
+    
+    def configure_connection_limits(self):
+        """
+        Configure connection limiting per IP.
+        
+        TODO: Limit HTTP connections per IP (use connlimit)
+        TODO: Limit HTTPS connections per IP
+        """
+        # TODO: Implement connection limits
+        pass
+    
+    def block_malware_ports(self):
+        """
+        Block common malware and P2P ports.
+        
+        TODO: Define list of malware ports
+        TODO: Create DROP rules for these ports
+        """
+        # TODO: Implement port blocking
+        pass
+    
+    def detect_port_scanning(self):
+        """
+        Implement port scan detection.
+        
+        TODO: Rate limit RST packets
+        TODO: Track and block rapid connection attempts
+        TODO: Use recent module for tracking
+        """
+        # TODO: Implement scan detection
+        pass
+
+def main():
+    """Main execution function"""
+    rules = CustomSecurityRules()
+    
+    # TODO: Implement custom security rules
+    # TODO: Display summary
+    
+    return True
+
+if __name__ == "__main__":
+    main()
+Step 4: Execute Firewall Configuration
+Run your completed scripts:
+
+chmod +x firewall_manager.py custom_security_rules.py
+sudo python3 firewall_manager.py
+sudo python3 custom_security_rules.py
+Step 5: Verify Firewall Rules
+Check the applied rules:
+
+# View all rules
+sudo iptables -L -n -v
+
+# View specific chain
+sudo iptables -L INPUT -n -v
+
+# View NAT rules
+sudo iptables -t nat -L -n -v
+
+# Count rules
+sudo iptables -L | grep -c "Chain"
+Task 3: Security Testing and Validation
+Step 1: Test Firewall Effectiveness
+Create a testing script:
+
+nano test_firewall.sh
+Add:
+
+#!/bin/bash
+# Firewall Testing Script
+
+echo "Testing Firewall Configuration"
+echo "================================"
+
+# Test SSH access
+echo "Testing SSH port..."
+nc -zv 127.0.0.1 22
+
+# Test HTTP access
+echo "Testing HTTP port..."
+nc -zv 127.0.0.1 80
+
+# Test blocked port
+echo "Testing blocked port (should fail)..."
+nc -zv 127.0.0.1 12345
+
+# Test ICMP
+echo "Testing ICMP (ping)..."
+ping -c 3 127.0.0.1
+
+echo "Testing complete"
+Run the tests:
+
+chmod +x test_firewall.sh
+./test_firewall.sh
+Step 2: Analyze Firewall Logs
+View firewall activity:
+
+# View kernel logs for iptables
+sudo dmesg | grep IPTABLES
+
+# View system logs
+sudo tail -f /var/log/syslog | grep iptables
+
+# Check firewall operation log
+cat ~/lab2-hardening/firewall_operations.log
+Step 3: Performance Testing
+Test firewall performance:
+
+# Count total rules
+sudo iptables -L | wc -l
+
+# Check rule processing time
+time sudo iptables -L > /dev/null
+
+# Monitor connection tracking
+sudo cat /proc/net/nf_conntrack | wc -l
+Expected Outcomes
+After completing this lab, you should have:
+
+Functional FreeRADIUS server with multiple user accounts
+Automated router configuration generator
+Comprehensive iptables firewall with:
+Default-deny policies
+SSH rate limiting
+Attack prevention rules
+Connection tracking
+Persistent rule storage
+Python scripts for firewall automation
+Testing and validation procedures
+Troubleshooting Tips
+FreeRADIUS not starting:
+
+Check configuration syntax: sudo freeradius -X
+Verify port 1812 is not in use: sudo netstat -tulpn | grep 1812
+Review logs: sudo tail -f /var/log/freeradius/radius.log
+Iptables rules not persisting:
+
+Install persistence package: sudo apt install iptables-persistent
+Save rules manually: sudo netfilter-persistent save
+Check saved rules: sudo cat /etc/iptables/rules.v4
+Authentication tests failing:
+
+Verify RADIUS secret matches in clients.conf
+Check user credentials in users file
+Ensure FreeRADIUS service is running: sudo systemctl status freeradius
+Python script permission errors:
+
+Run with sudo for iptables commands: sudo python3 script.py
+Check script is executable: chmod +x script.py
+Locked out after firewall configuration:
+
+Access via console (not SSH) if available
+Flush rules: sudo iptables -F && sudo iptables -P INPUT ACCEPT
+Always test rules before saving permanently
+Conclusion
+This lab demonstrated essential network security hardening techniques including centralized authentication and automated firewall management. You implemented FreeRADIUS for device authentication, created Python automation scripts for iptables configuration, and applied defense-in-depth strategies. These skills are fundamental for securing enterprise network infrastructure and implementing security best practices in production environments.
+
+Key takeaways:
+
+Centralized authentication improves security and management
+Automation reduces errors and ensures consistency
+Defense-in-depth requires multiple security layers
+Testing and validation are critical for security controls
+Continue practicing by expanding the scripts with additional security rules and testing different attack scenarios.
