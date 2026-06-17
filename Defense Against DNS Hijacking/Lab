@@ -1,0 +1,509 @@
+Defense Against DNS Hijacking
+Objectives
+By the end of this lab, students will be able to:
+
+Implement DNS Security Extensions (DNSSEC) to protect against DNS spoofing
+Develop Python scripts to monitor DNS records and detect unauthorized changes
+Deploy Zeek network security monitor for DNS traffic analysis
+Configure Elasticsearch and Kibana for DNS monitoring visualization
+Identify DNS hijacking indicators through traffic pattern analysis
+Prerequisites
+Basic understanding of DNS protocol and record types
+Familiarity with Linux command line operations
+Basic Python programming knowledge
+Understanding of network security fundamentals
+Experience with JSON/YAML configuration files
+Lab Environment
+Al Nafi provides ready-to-use Linux-based cloud machines for this lab. Click Start Lab to access your pre-configured Ubuntu 20.04 LTS environment with necessary tools pre-installed.
+
+Task 1: Implement DNSSEC with Terraform
+Step 1: Install Required Tools
+# Update system and install dependencies
+sudo apt update && sudo apt upgrade -y
+sudo apt install -y wget unzip bind9 bind9utils dnsutils
+
+# Install Terraform
+wget https://releases.hashicorp.com/terraform/1.6.0/terraform_1.6.0_linux_amd64.zip
+unzip terraform_1.6.0_linux_amd64.zip
+sudo mv terraform /usr/local/bin/
+terraform version
+
+# Create working directory
+mkdir -p ~/dns-lab/terraform && cd ~/dns-lab/terraform
+Step 2: Create Terraform Configuration
+Create main.tf with the following starter template:
+
+terraform {
+  required_providers {
+    local = {
+      source  = "hashicorp/local"
+      version = "~> 2.4"
+    }
+    null = {
+      source  = "hashicorp/null"
+      version = "~> 3.2"
+    }
+  }
+}
+
+# TODO: Create resource to generate DNSSEC Zone Signing Key (ZSK)
+# Use dnssec-keygen with RSASHA256 algorithm, 1024 bits
+resource "null_resource" "generate_zsk" {
+  provisioner "local-exec" {
+    command = <<-EOT
+      # TODO: Create /etc/bind/keys directory
+      # TODO: Generate ZSK using dnssec-keygen
+      # TODO: Set proper permissions for bind user
+    EOT
+  }
+}
+
+# TODO: Create resource to generate Key Signing Key (KSK)
+# Use dnssec-keygen with RSASHA256 algorithm, 2048 bits, -f KSK flag
+resource "null_resource" "generate_ksk" {
+  # TODO: Implement KSK generation
+}
+
+# TODO: Create BIND9 zone configuration file
+resource "local_file" "named_conf_local" {
+  content = <<-EOT
+zone "example.local" {
+    # TODO: Configure as master zone
+    # TODO: Enable auto-dnssec and inline-signing
+    # TODO: Set key-directory path
+};
+EOT
+  filename = "/tmp/named.conf.local"
+}
+
+# TODO: Create zone file with DNS records
+resource "local_file" "zone_file" {
+  content = <<-EOT
+$TTL    604800
+@       IN      SOA     ns1.example.local. admin.example.local. (
+                              2023110101  ; Serial
+                         604800           ; Refresh
+                          86400           ; Retry
+                        2419200           ; Expire
+                         604800 )         ; Negative Cache TTL
+; TODO: Add NS, A, MX, and CNAME records
+EOT
+  filename = "/tmp/db.example.local"
+}
+
+# TODO: Deploy configuration files to /etc/bind/
+resource "null_resource" "deploy_config" {
+  # TODO: Copy files and set ownership to bind user
+}
+Step 3: Deploy DNSSEC Configuration
+# Initialize Terraform
+terraform init
+
+# Review planned changes
+terraform plan
+
+# Apply configuration
+terraform apply -auto-approve
+
+# Verify BIND9 service
+sudo systemctl status bind9
+sudo ls -la /etc/bind/keys/
+Step 4: Validate DNSSEC Implementation
+# Test basic DNS resolution
+dig @localhost example.local
+
+# Verify DNSSEC signatures
+dig @localhost example.local +dnssec +multiline
+
+# Check DNSKEY records
+dig @localhost example.local DNSKEY
+
+# Verify RRSIG records for specific domain
+dig @localhost www.example.local +dnssec
+Task 2: Develop DNS Change Monitoring Script
+Step 1: Setup Python Environment
+cd ~/dns-lab
+python3 -m venv dns-monitor-env
+source dns-monitor-env/bin/activate
+
+# Install required packages
+pip install dnspython schedule
+Step 2: Create DNS Monitor Script
+Create dns_monitor.py with the following template:
+
+#!/usr/bin/env python3
+"""
+DNS Change Monitor - Detects unauthorized DNS modifications
+"""
+
+import dns.resolver
+import json
+import logging
+from datetime import datetime
+import sys
+
+class DNSMonitor:
+    def __init__(self, config_file='dns_config.json'):
+        """
+        Initialize DNS Monitor
+        
+        Args:
+            config_file: Path to configuration file
+        """
+        self.config = self.load_config(config_file)
+        self.setup_logging()
+        self.baseline_file = 'dns_baseline.json'
+        
+    def load_config(self, config_file):
+        """
+        Load monitoring configuration from JSON file
+        
+        Returns:
+            dict: Configuration parameters
+        """
+        # TODO: Load config file or return default configuration
+        # TODO: Include domains_to_monitor, dns_servers, record_types
+        pass
+    
+    def setup_logging(self):
+        """Configure logging to file and console"""
+        # TODO: Setup logging with INFO level
+        # TODO: Create file handler for dns_monitor.log
+        # TODO: Create console handler for stdout
+        pass
+    
+    def query_dns_record(self, domain, record_type, dns_server):
+        """
+        Query DNS record for specific domain and type
+        
+        Args:
+            domain: Domain name to query
+            record_type: DNS record type (A, MX, NS, etc.)
+            dns_server: DNS server IP address
+            
+        Returns:
+            dict: Query results with records and metadata
+        """
+        # TODO: Create dns.resolver.Resolver instance
+        # TODO: Set nameserver to dns_server parameter
+        # TODO: Query for record_type and handle exceptions
+        # TODO: Return dict with domain, type, records, timestamp
+        pass
+    
+    def create_baseline(self):
+        """
+        Create baseline snapshot of DNS records
+        
+        Returns:
+            dict: Baseline DNS records for all monitored domains
+        """
+        # TODO: Iterate through domains and record types
+        # TODO: Query each DNS server in configuration
+        # TODO: Store results in nested dictionary structure
+        # TODO: Save baseline to JSON file
+        pass
+    
+    def load_baseline(self):
+        """Load existing baseline from file"""
+        # TODO: Read baseline JSON file
+        # TODO: Handle FileNotFoundError by creating new baseline
+        pass
+    
+    def compare_records(self, current, baseline):
+        """
+        Compare current DNS records with baseline
+        
+        Args:
+            current: Current DNS query result
+            baseline: Baseline DNS query result
+            
+        Returns:
+            list: Detected changes with details
+        """
+        # TODO: Compare record sets using set operations
+        # TODO: Identify added and removed records
+        # TODO: Return list of changes with metadata
+        pass
+    
+    def monitor_dns_changes(self):
+        """
+        Monitor DNS changes against baseline
+        
+        Returns:
+            list: All detected changes
+        """
+        # TODO: Query current DNS records for all monitored domains
+        # TODO: Compare with baseline using compare_records()
+        # TODO: Log warnings for detected changes
+        # TODO: Save alerts to file
+        pass
+    
+    def assess_severity(self, change):
+        """
+        Assess severity of DNS change
+        
+        Args:
+            change: Change dictionary
+            
+        Returns:
+            str: Severity level (high, medium, low)
+        """
+        # TODO: Return 'high' for NS and MX record changes
+        # TODO: Return 'medium' for A/AAAA record changes
+        # TODO: Return 'low' for other record types
+        pass
+    
+    def generate_alert_report(self, changes):
+        """
+        Generate human-readable alert report
+        
+        Args:
+            changes: List of detected changes
+        """
+        # TODO: Format changes into readable report
+        # TODO: Include domain, record type, severity
+        # TODO: Save report to timestamped file
+        pass
+
+def main():
+    """Main execution function"""
+    monitor = DNSMonitor()
+    
+    if len(sys.argv) > 1:
+        command = sys.argv[1]
+        
+        if command == 'baseline':
+            # TODO: Create new baseline
+            pass
+        elif command == 'check':
+            # TODO: Perform single check against baseline
+            pass
+        elif command == 'monitor':
+            # TODO: Start continuous monitoring with schedule
+            pass
+        else:
+            print("Usage: python3 dns_monitor.py [baseline|check|monitor]")
+    else:
+        print("Commands: baseline, check, monitor")
+
+if __name__ == "__main__":
+    main()
+Step 3: Create Configuration File
+Create dns_config.json:
+
+{
+    "domains_to_monitor": [
+        "example.local",
+        "www.example.local",
+        "mail.example.local"
+    ],
+    "dns_servers": ["127.0.0.1", "8.8.8.8"],
+    "record_types": ["A", "MX", "NS", "TXT"],
+    "check_interval": 300,
+    "log_level": "INFO"
+}
+Step 4: Test DNS Monitoring
+# Create baseline
+python3 dns_monitor.py baseline
+
+# Perform single check
+python3 dns_monitor.py check
+
+# View baseline data
+cat dns_baseline.json | python3 -m json.tool | head -30
+Task 3: Deploy Zeek and ELK Stack for DNS Analysis
+Step 1: Install Zeek Network Monitor
+# Add Zeek repository
+echo 'deb http://download.opensuse.org/repositories/security:/zeek/xUbuntu_20.04/ /' | sudo tee /etc/apt/sources.list.d/security:zeek.list
+curl -fsSL https://download.opensuse.org/repositories/security:zeek/xUbuntu_20.04/Release.key | gpg --dearmor | sudo tee /etc/apt/trusted.gpg.d/security_zeek.gpg > /dev/null
+
+# Install Zeek
+sudo apt update
+sudo apt install -y zeek
+
+# Add to PATH
+echo 'export PATH=/opt/zeek/bin:$PATH' >> ~/.bashrc
+source ~/.bashrc
+Step 2: Install ELK Stack
+# Install Java
+sudo apt install -y openjdk-11-jdk
+
+# Add Elastic repository
+wget -qO - https://artifacts.elastic.co/GPG-KEY-elasticsearch | sudo apt-key add -
+echo "deb https://artifacts.elastic.co/packages/7.x/apt stable main" | sudo tee /etc/apt/sources.list.d/elastic-7.x.list
+
+# Install Elasticsearch and Kibana
+sudo apt update
+sudo apt install -y elasticsearch kibana logstash
+
+# Configure Elasticsearch
+sudo tee /etc/elasticsearch/elasticsearch.yml > /dev/null << 'EOF'
+cluster.name: dns-monitoring
+node.name: node-1
+network.host: localhost
+http.port: 9200
+discovery.type: single-node
+EOF
+
+# Configure Kibana
+sudo tee /etc/kibana/kibana.yml > /dev/null << 'EOF'
+server.port: 5601
+server.host: "localhost"
+elasticsearch.hosts: ["http://localhost:9200"]
+EOF
+
+# Start services
+sudo systemctl start elasticsearch
+sudo systemctl start kibana
+sleep 30
+
+# Verify Elasticsearch
+curl -X GET "localhost:9200/"
+Step 3: Configure Zeek for DNS Monitoring
+Create custom Zeek script at /opt/zeek/share/zeek/site/dns-monitor.zeek:
+
+##! DNS Monitoring and Anomaly Detection
+
+@load base/protocols/dns
+@load base/frameworks/notice
+
+module DNSMonitor;
+
+export {
+    ## Suspicious query threshold
+    const suspicious_query_threshold = 100 &redef;
+    
+    ## Monitored domains
+    const monitored_domains: set[string] = {
+        "example.local"
+    } &redef;
+    
+    ## Notice types
+    redef enum Notice::Type += {
+        DNS_Suspicious_Query_Volume,
+        DNS_Long_Domain_Name
+    };
+}
+
+# TODO: Create global table to track DNS query counts per host
+# TODO: Use &create_expire=1hr for automatic cleanup
+
+event dns_request(c: connection, msg: dns_msg, query: string, qtype: count, qclass: count) {
+    # TODO: Increment query count for client IP
+    # TODO: Check if count exceeds suspicious_query_threshold
+    # TODO: Generate NOTICE for high query volume
+    # TODO: Detect long domain names (potential tunneling)
+    # TODO: Monitor queries to specific domains
+}
+
+event dns_response(c: connection, msg: dns_msg, query: string, qtype: count, qclass: count) {
+    # TODO: Log responses for monitored domains
+}
+Update /opt/zeek/share/zeek/site/local.zeek:
+
+@load base/protocols/dns
+@load policy/tuning/json-logs.zeek
+@load ./dns-monitor.zeek
+Step 4: Configure Logstash Pipeline
+Create /etc/logstash/conf.d/zeek-dns.conf:
+
+input {
+  file {
+    path => "/opt/zeek/logs/current/dns.log"
+    start_position => "beginning"
+    codec => "json"
+    tags => ["zeek", "dns"]
+  }
+}
+
+filter {
+  # TODO: Add date filter to parse timestamp
+  # TODO: Add mutate filter to rename fields
+  # TODO: Add geoip filter for IP geolocation
+}
+
+output {
+  elasticsearch {
+    hosts => ["localhost:9200"]
+    index => "zeek-dns-%{+YYYY.MM.dd}"
+  }
+  stdout { codec => rubydebug }
+}
+Step 5: Start Monitoring
+# Configure Zeek network interface
+sudo tee /opt/zeek/etc/node.cfg > /dev/null << 'EOF'
+[zeek]
+type=standalone
+host=localhost
+interface=lo
+EOF
+
+# Start Zeek
+sudo /opt/zeek/bin/zeekctl deploy
+
+# Start Logstash
+sudo systemctl start logstash
+
+# Generate DNS traffic for testing
+for i in {1..10}; do
+  dig @localhost example.local
+  dig @localhost www.example.local
+  sleep 1
+done
+
+# Check Zeek logs
+tail -f /opt/zeek/logs/current/dns.log
+Step 6: Configure Kibana Dashboard
+# Access Kibana at http://localhost:5601
+
+# Create index pattern:
+# 1. Navigate to Management > Index Patterns
+# 2. Create pattern: zeek-dns-*
+# 3. Select @timestamp as time field
+
+# Create visualizations:
+# 1. DNS Query Volume (Line chart)
+# 2. Top Queried Domains (Pie chart)
+# 3. DNS Query Types (Bar chart)
+# 4. Geographic Distribution (Map)
+
+# Build dashboard combining all visualizations
+Expected Outcomes
+After completing this lab, you should have:
+
+Functional DNSSEC implementation protecting example.local domain
+Python script capable of detecting DNS record changes
+Zeek monitoring DNS traffic with custom detection rules
+ELK stack visualizing DNS queries and anomalies
+Understanding of DNS hijacking detection techniques
+Troubleshooting Tips
+BIND9 fails to start:
+
+Check configuration syntax: sudo named-checkconf
+Verify zone file syntax: sudo named-checkzone example.local /etc/bind/db.example.local
+Review logs: sudo journalctl -u bind9 -n 50
+Python script cannot resolve domains:
+
+Verify DNS server is running: sudo systemctl status bind9
+Test manual resolution: dig @localhost example.local
+Check firewall rules: sudo ufw status
+Elasticsearch connection refused:
+
+Verify service status: sudo systemctl status elasticsearch
+Check if port is listening: sudo netstat -tlnp | grep 9200
+Review logs: sudo journalctl -u elasticsearch -n 50
+Zeek not capturing traffic:
+
+Verify interface configuration in /opt/zeek/etc/node.cfg
+Check Zeek status: sudo /opt/zeek/bin/zeekctl status
+Review Zeek logs: tail -f /opt/zeek/logs/current/stderr.log
+Conclusion
+This lab demonstrated comprehensive DNS security monitoring using multiple tools. You implemented DNSSEC for cryptographic validation, developed custom monitoring scripts for change detection, and deployed enterprise-grade monitoring with Zeek and ELK stack. These techniques form the foundation of DNS hijacking defense in production environments. Understanding DNS security is critical as DNS remains a primary attack vector for network compromise.
+
+Key takeaways:
+
+DNSSEC provides cryptographic assurance of DNS data integrity
+Continuous monitoring detects unauthorized DNS changes
+Network traffic analysis reveals DNS-based attacks
+Visualization aids in identifying anomalous patterns
+Defense-in-depth requires multiple complementary security layers
