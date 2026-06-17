@@ -1,0 +1,437 @@
+Securing Cloud Infrastructure (Azure)
+Objectives
+By the end of this lab, students will be able to:
+
+Configure Azure Network Security Groups (NSG) using Terraform for infrastructure as code
+Implement automated Azure resource auditing using Python scripts
+Perform comprehensive security assessments using Lynis on cloud infrastructure
+Apply security best practices for Azure cloud environments
+Understand continuous security monitoring in cloud deployments
+Prerequisites
+Basic understanding of cloud computing and networking concepts
+Familiarity with Linux command line operations
+Basic Python programming knowledge
+Understanding of Infrastructure as Code (IaC) principles
+Basic knowledge of security principles
+Lab Environment
+Al Nafi provides pre-configured Linux-based cloud machines. Click Start Lab to access your environment with:
+
+Ubuntu 22.04 LTS
+Terraform pre-installed
+Python 3.10 with required libraries
+Azure CLI configured
+Lynis security auditing tool
+All necessary dependencies
+Task 1: Configure Azure Network Security Groups with Terraform
+Step 1.1: Create Terraform Project Structure
+# Create project directory
+mkdir -p ~/azure-security-lab/terraform
+cd ~/azure-security-lab/terraform
+
+# Create main configuration file
+nano main.tf
+Add the following starter template:
+
+terraform {
+  required_providers {
+    azurerm = {
+      source  = "hashicorp/azurerm"
+      version = "~>3.0"
+    }
+  }
+}
+
+provider "azurerm" {
+  features {}
+}
+
+# TODO: Create Resource Group
+resource "azurerm_resource_group" "security_lab" {
+  # TODO: Add name and location
+  # TODO: Add appropriate tags
+}
+
+# TODO: Create Virtual Network
+resource "azurerm_virtual_network" "security_vnet" {
+  # TODO: Configure name, address_space, location
+  # TODO: Reference resource group
+}
+
+# TODO: Create Subnet
+resource "azurerm_subnet" "web_subnet" {
+  # TODO: Configure subnet with appropriate address prefix
+}
+
+# TODO: Create Network Security Group
+resource "azurerm_network_security_group" "web_nsg" {
+  # TODO: Add security rules for HTTP (80), HTTPS (443)
+  # TODO: Add restricted SSH rule (port 22, limited source)
+  # TODO: Add deny-all rule with lowest priority
+}
+
+# TODO: Associate NSG with Subnet
+resource "azurerm_subnet_network_security_group_association" "web_nsg_association" {
+  # TODO: Link subnet and NSG
+}
+Step 1.2: Create Variables File
+nano variables.tf
+# TODO: Define variable for resource_group_name (default: "rg-security-lab")
+# TODO: Define variable for location (default: "East US")
+# TODO: Define variable for allowed_ssh_source (default: "10.0.0.0/8")
+# TODO: Define variable for environment tag (default: "Lab")
+Step 1.3: Create Outputs File
+nano outputs.tf
+# TODO: Output resource_group_name
+# TODO: Output virtual_network_name
+# TODO: Output nsg_name and nsg_id
+Step 1.4: Deploy Infrastructure
+# Initialize Terraform
+terraform init
+
+# Validate configuration
+terraform validate
+
+# Preview changes
+terraform plan
+
+# Deploy resources
+terraform apply -auto-approve
+
+# Verify deployment
+az network nsg rule list --resource-group rg-security-lab --nsg-name nsg-web-tier --output table
+Task 2: Automate Azure Resource Auditing with Python
+Step 2.1: Create Security Audit Script
+mkdir -p ~/azure-security-lab/python-audit
+cd ~/azure-security-lab/python-audit
+nano azure_security_audit.py
+Create the following starter template:
+
+#!/usr/bin/env python3
+"""
+Azure Security Auditing Script
+Students: Complete the TODO sections to implement full auditing functionality
+"""
+
+import json
+import subprocess
+import sys
+from datetime import datetime
+
+class AzureSecurityAuditor:
+    def __init__(self):
+        self.audit_results = {
+            'timestamp': datetime.now().isoformat(),
+            'resource_groups': [],
+            'network_security_groups': [],
+            'security_findings': [],
+            'recommendations': []
+        }
+    
+    def run_az_command(self, command):
+        """
+        Execute Azure CLI command and return JSON output
+        
+        Args:
+            command: Azure CLI command string
+        
+        Returns:
+            Parsed JSON output or empty list on error
+        """
+        # TODO: Implement subprocess execution
+        # TODO: Handle errors and parse JSON
+        # TODO: Return results
+        pass
+    
+    def audit_resource_groups(self):
+        """
+        Audit all resource groups for security compliance
+        
+        Tasks:
+        - List all resource groups
+        - Check for missing tags
+        - Identify untagged resources
+        """
+        print("Auditing Resource Groups...")
+        # TODO: Get list of resource groups using az group list
+        # TODO: For each RG, check for tags
+        # TODO: Add findings for missing tags (Medium severity)
+        pass
+    
+    def audit_network_security_groups(self):
+        """
+        Audit NSGs for security misconfigurations
+        
+        Tasks:
+        - List all NSGs
+        - Analyze each rule for overly permissive access
+        - Flag rules allowing access from * (any source)
+        - Identify exposed management ports (22, 3389)
+        """
+        print("Auditing Network Security Groups...")
+        # TODO: Get list of NSGs
+        # TODO: For each NSG, get detailed rules
+        # TODO: Check for source_address_prefix == '*'
+        # TODO: Flag high-risk ports (22, 3389, *)
+        # TODO: Add findings with appropriate severity
+        pass
+    
+    def generate_recommendations(self):
+        """
+        Generate security recommendations based on findings
+        
+        Returns:
+            List of actionable recommendations
+        """
+        # TODO: Count findings by severity
+        # TODO: Generate recommendations list
+        # TODO: Prioritize based on critical/high findings
+        pass
+    
+    def save_audit_report(self):
+        """Save audit results to JSON file"""
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        filename = f"azure_security_audit_{timestamp}.json"
+        # TODO: Write audit_results to JSON file
+        pass
+    
+    def print_summary(self):
+        """Print audit summary to console"""
+        # TODO: Print formatted summary
+        # TODO: Show counts by severity
+        # TODO: List top findings
+        # TODO: Display recommendations
+        pass
+    
+    def run_full_audit(self):
+        """Execute complete security audit"""
+        print("Starting Azure Security Audit...")
+        
+        # TODO: Verify Azure CLI authentication
+        # TODO: Run all audit functions
+        # TODO: Generate and save report
+        pass
+
+if __name__ == "__main__":
+    auditor = AzureSecurityAuditor()
+    auditor.run_full_audit()
+Step 2.2: Create NSG Rule Analyzer
+nano nsg_rule_analyzer.py
+#!/usr/bin/env python3
+"""
+NSG Rule Analyzer - Detailed analysis of Network Security Group rules
+Students: Implement the analysis logic
+"""
+
+import json
+import subprocess
+from collections import defaultdict
+
+class NSGRuleAnalyzer:
+    def __init__(self):
+        self.dangerous_ports = {
+            '22': 'SSH', '3389': 'RDP', '1433': 'SQL Server',
+            '3306': 'MySQL', '5432': 'PostgreSQL', '6379': 'Redis',
+            '27017': 'MongoDB', '9200': 'Elasticsearch'
+        }
+    
+    def analyze_nsg_rules(self, resource_group, nsg_name):
+        """
+        Analyze NSG rules for security issues
+        
+        Args:
+            resource_group: Azure resource group name
+            nsg_name: Network Security Group name
+        
+        Returns:
+            Dictionary with analysis results
+        """
+        # TODO: Get NSG rules using Azure CLI
+        # TODO: Count allow/deny rules
+        # TODO: Analyze source addresses
+        # TODO: Identify risky port exposures
+        # TODO: Return analysis dictionary
+        pass
+    
+    def get_recommendation(self, port, source):
+        """
+        Generate security recommendation for a rule
+        
+        Args:
+            port: Destination port
+            source: Source address prefix
+        
+        Returns:
+            Recommendation string
+        """
+        # TODO: Check if source is internet-facing
+        # TODO: Provide specific recommendations based on port
+        # TODO: Return recommendation text
+        pass
+    
+    def print_analysis(self, analysis):
+        """Print detailed analysis results"""
+        # TODO: Format and print analysis
+        # TODO: Highlight risky rules
+        # TODO: Show port and source analysis
+        pass
+
+def main():
+    analyzer = NSGRuleAnalyzer()
+    # TODO: Get all NSGs in subscription
+    # TODO: Analyze each NSG
+    # TODO: Print results
+
+if __name__ == "__main__":
+    main()
+Step 2.3: Execute Audit Scripts
+# Make scripts executable
+chmod +x azure_security_audit.py nsg_rule_analyzer.py
+
+# Run main security audit
+python3 azure_security_audit.py
+
+# Run NSG rule analysis
+python3 nsg_rule_analyzer.py
+
+# Review generated reports
+ls -la *.json
+cat azure_security_audit_*.json | jq '.'
+Task 3: Perform Security Assessment with Lynis
+Step 3.1: Verify Lynis Installation
+# Check Lynis version
+lynis show version
+
+# Update Lynis database
+sudo lynis update info
+
+# View available tests
+lynis show groups
+Step 3.2: Run System Security Audit
+# Create reports directory
+mkdir -p ~/azure-security-lab/lynis-reports
+cd ~/azure-security-lab/lynis-reports
+
+# Run comprehensive system audit
+sudo lynis audit system --verbose --log-file lynis-system-audit.log
+
+# View audit report
+sudo lynis show report
+
+# Check specific security areas
+sudo lynis show details
+Step 3.3: Analyze Lynis Results
+# Extract warnings and suggestions
+sudo grep "Warning" /var/log/lynis.log
+
+# View hardening index
+sudo grep "Hardening index" /var/log/lynis-report.dat
+
+# Check specific security categories
+sudo lynis show categories
+Step 3.4: Create Custom Security Checks
+# Create custom Lynis plugin
+sudo nano /usr/share/lynis/plugins/plugin_cloud_security
+Add starter template:
+
+#!/bin/bash
+# Cloud Security Plugin for Lynis
+# Students: Complete the TODO sections
+
+PLUGIN_AUTHOR="Security Lab"
+PLUGIN_NAME="cloud_security"
+PLUGIN_VERSION="1.0"
+
+# TODO: Check if Azure CLI is installed
+# Register --test-no CUST-0001 --weight L --network NO
+# TODO: Verify az command exists
+# TODO: Check if authenticated
+
+# TODO: Check for Terraform installation
+# Register --test-no CUST-0002 --weight L --network NO
+# TODO: Verify terraform command exists
+# TODO: Check version
+
+# TODO: Check for security tools
+# Register --test-no CUST-0003 --weight L --network NO
+# TODO: Verify presence of security scanning tools
+Make executable and run:
+
+sudo chmod +x /usr/share/lynis/plugins/plugin_cloud_security
+sudo lynis audit system --tests-from-group custom
+Expected Outcomes
+After completing this lab, you should have:
+
+Terraform Infrastructure: Deployed Azure NSG with secure rules limiting access
+Python Audit Scripts: Functional scripts identifying security misconfigurations
+Audit Reports: JSON reports showing security findings and recommendations
+Lynis Assessment: System security audit with hardening recommendations
+Security Insights: Understanding of cloud security best practices
+Key metrics to verify:
+
+NSG rules properly restrict inbound traffic
+Audit scripts identify overly permissive rules
+Lynis hardening index above 60
+No critical security findings unaddressed
+Troubleshooting Tips
+Issue 1: Terraform Authentication Errors
+# Verify Azure CLI login
+az account show
+
+# Re-authenticate if needed
+az login
+
+# Set correct subscription
+az account set --subscription "your-subscription-id"
+Issue 2: Python Script Execution Errors
+# Check Azure CLI is accessible
+which az
+
+# Verify Python version
+python3 --version
+
+# Install missing modules
+pip3 install azure-cli-core
+Issue 3: Lynis Permission Denied
+# Run with sudo
+sudo lynis audit system
+
+# Check Lynis permissions
+ls -la /usr/share/lynis/
+
+# Reinstall if corrupted
+sudo apt-get install --reinstall lynis
+Issue 4: NSG Rules Not Applying
+# Verify NSG association
+az network vnet subnet show --resource-group rg-security-lab --vnet-name vnet-security-lab --name subnet-web
+
+# Check NSG effective rules
+az network nic list-effective-nsg --resource-group rg-security-lab --name your-nic-name
+
+# Force Terraform refresh
+terraform refresh
+terraform apply
+Conclusion
+This lab provided hands-on experience securing Azure cloud infrastructure through:
+
+Infrastructure as Code: Using Terraform to define and deploy secure network configurations
+Automated Auditing: Implementing Python scripts for continuous security monitoring
+Security Assessment: Leveraging Lynis for comprehensive system hardening analysis
+Key Takeaways:
+
+NSGs are critical for network segmentation and access control
+Automated auditing identifies misconfigurations before exploitation
+Regular security assessments maintain security posture
+Infrastructure as Code enables consistent, repeatable security controls
+Next Steps:
+
+Implement Azure Security Center recommendations
+Add Azure Monitor alerts for security events
+Integrate auditing scripts into CI/CD pipelines
+Explore Azure Policy for governance enforcement
+Best Practices Applied:
+
+Principle of least privilege in NSG rules
+Defense in depth with multiple security layers
+Continuous monitoring and auditing
+Documentation and tagging for governance
+Remember: Cloud security is an ongoing process requiring regular assessment, monitoring, and improvement.
