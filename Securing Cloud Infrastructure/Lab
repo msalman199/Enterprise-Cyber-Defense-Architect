@@ -1,0 +1,560 @@
+Securing Cloud Infrastructure (AWS)
+Objectives
+By the end of this lab, students will be able to:
+
+Deploy secure AWS infrastructure using Terraform with security best practices
+Configure IAM roles and policies programmatically using Python and AWS CLI
+Perform security assessments on AWS infrastructure using automated tools
+Implement defense-in-depth security strategies for cloud environments
+Analyze and remediate common cloud security vulnerabilities
+Prerequisites
+Basic understanding of AWS services (EC2, VPC, IAM, S3)
+Familiarity with Linux command line operations
+Basic knowledge of Python programming
+Understanding of infrastructure as code concepts
+Lab Environment
+Al Nafi provides Linux-based cloud machines for this lab. Click Start Lab to access your pre-configured environment with:
+
+Ubuntu 20.04 LTS
+Pre-installed development tools
+Internet connectivity for AWS API access
+All necessary open-source security tools
+Task 1: Deploy Secure AWS Infrastructure with Terraform
+Step 1.1: Install Terraform and AWS CLI
+# Update system and install dependencies
+sudo apt update && sudo apt upgrade -y
+sudo apt install -y wget unzip curl
+
+# Install Terraform
+wget https://releases.hashicorp.com/terraform/1.6.0/terraform_1.6.0_linux_amd64.zip
+unzip terraform_1.6.0_linux_amd64.zip
+sudo mv terraform /usr/local/bin/
+terraform version
+
+# Install AWS CLI v2
+curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
+unzip awscliv2.zip
+sudo ./aws/install
+aws --version
+Step 1.2: Configure AWS Credentials
+# Configure AWS credentials (use provided lab credentials)
+aws configure
+# Enter: AWS Access Key ID
+# Enter: AWS Secret Access Key
+# Enter: Default region (us-east-1)
+# Enter: Output format (json)
+
+# Verify configuration
+aws sts get-caller-identity
+Step 1.3: Create Terraform Configuration
+Create a project directory and Terraform configuration file:
+
+mkdir ~/aws-secure-infrastructure
+cd ~/aws-secure-infrastructure
+Create main.tf with the following starter template:
+
+terraform {
+  required_version = ">= 1.0"
+  required_providers {
+    aws = {
+      source  = "hashicorp/aws"
+      version = "~> 5.0"
+    }
+  }
+}
+
+provider "aws" {
+  region = var.aws_region
+}
+
+variable "aws_region" {
+  description = "AWS region"
+  type        = string
+  default     = "us-east-1"
+}
+
+variable "environment" {
+  description = "Environment name"
+  type        = string
+  default     = "secure-lab"
+}
+
+# TODO: Create VPC with CIDR 10.0.0.0/16
+# Enable DNS hostnames and DNS support
+resource "aws_vpc" "secure_vpc" {
+  # TODO: Complete VPC configuration
+}
+
+# TODO: Create Internet Gateway
+resource "aws_internet_gateway" "secure_igw" {
+  # TODO: Attach to VPC
+}
+
+# TODO: Create public subnet (10.0.1.0/24)
+# Set map_public_ip_on_launch = false for security
+resource "aws_subnet" "public_subnet" {
+  # TODO: Complete subnet configuration
+}
+
+# TODO: Create private subnet (10.0.2.0/24)
+resource "aws_subnet" "private_subnet" {
+  # TODO: Complete subnet configuration
+}
+
+# TODO: Create NAT Gateway with Elastic IP
+resource "aws_eip" "nat_eip" {
+  domain = "vpc"
+}
+
+resource "aws_nat_gateway" "secure_nat" {
+  # TODO: Configure NAT Gateway
+}
+
+# TODO: Create route tables for public and private subnets
+# Public: route to Internet Gateway
+# Private: route to NAT Gateway
+
+# TODO: Create Security Group for Bastion Host
+# Allow SSH (port 22) from specific IPs only
+resource "aws_security_group" "bastion_sg" {
+  name_prefix = "${var.environment}-bastion-"
+  vpc_id      = aws_vpc.secure_vpc.id
+  
+  # TODO: Add ingress rules for SSH
+  # TODO: Add egress rules
+}
+
+# TODO: Create Security Group for Application Servers
+# Allow SSH from bastion only
+# Allow HTTP/HTTPS from within VPC
+resource "aws_security_group" "app_sg" {
+  # TODO: Complete security group configuration
+}
+
+# TODO: Create EC2 instances with encrypted EBS volumes
+# Bastion host in public subnet
+# Application server in private subnet
+# Enable detailed monitoring
+
+# TODO: Create S3 bucket with:
+# - Versioning enabled
+# - Server-side encryption (AES256)
+# - Public access blocked
+# - CloudTrail logging enabled
+
+# Outputs
+output "vpc_id" {
+  value = aws_vpc.secure_vpc.id
+}
+
+output "bastion_public_ip" {
+  description = "Public IP of bastion host"
+  value       = "TODO: Add bastion EIP"
+}
+Step 1.4: Generate SSH Key and Deploy
+# Generate SSH key pair
+ssh-keygen -t rsa -b 4096 -f ~/.ssh/id_rsa -N ""
+chmod 600 ~/.ssh/id_rsa
+
+# Initialize and deploy Terraform
+terraform init
+terraform validate
+terraform plan
+terraform apply -auto-approve
+
+# Save outputs
+terraform output > terraform_outputs.txt
+Task 2: Configure IAM Roles and Policies with Python
+Step 2.1: Setup Python Environment
+# Install Python dependencies
+sudo apt install -y python3-pip python3-venv
+
+# Create virtual environment
+python3 -m venv aws-iam-env
+source aws-iam-env/bin/activate
+
+# Install required packages
+pip install boto3 botocore
+Step 2.2: Create IAM Management Script
+Create iam_security_manager.py:
+
+#!/usr/bin/env python3
+"""
+AWS IAM Security Manager
+Manages IAM roles and policies following security best practices.
+"""
+
+import boto3
+import json
+import logging
+from botocore.exceptions import ClientError
+
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
+class IAMSecurityManager:
+    def __init__(self, region='us-east-1'):
+        """
+        Initialize IAM Security Manager
+        
+        Args:
+            region: AWS region name
+        """
+        # TODO: Initialize boto3 IAM and STS clients
+        # TODO: Get account ID using STS
+        pass
+
+    def create_security_policy(self, policy_name, policy_document):
+        """
+        Create an IAM policy with security best practices
+        
+        Args:
+            policy_name: Name of the policy
+            policy_document: Policy document as dictionary
+            
+        Returns:
+            Policy ARN
+        """
+        # TODO: Create IAM policy using iam_client.create_policy()
+        # TODO: Handle EntityAlreadyExists exception
+        # TODO: Return policy ARN
+        pass
+
+    def create_security_role(self, role_name, trust_policy, description=""):
+        """
+        Create an IAM role with secure trust policy
+        
+        Args:
+            role_name: Name of the role
+            trust_policy: Trust policy document as dictionary
+            description: Role description
+            
+        Returns:
+            Role ARN
+        """
+        # TODO: Create IAM role using iam_client.create_role()
+        # TODO: Set MaxSessionDuration to 3600 seconds
+        # TODO: Add tags for tracking
+        # TODO: Handle EntityAlreadyExists exception
+        pass
+
+    def attach_policy_to_role(self, role_name, policy_arn):
+        """
+        Attach a policy to a role
+        
+        Args:
+            role_name: Name of the role
+            policy_arn: ARN of the policy to attach
+        """
+        # TODO: Attach policy using iam_client.attach_role_policy()
+        pass
+
+    def create_ec2_security_role(self):
+        """
+        Create a secure role for EC2 instances with least privilege
+        
+        Returns:
+            Role ARN
+        """
+        role_name = "SecureEC2Role"
+        
+        # Trust policy for EC2 service
+        trust_policy = {
+            "Version": "2012-10-17",
+            "Statement": [{
+                "Effect": "Allow",
+                "Principal": {"Service": "ec2.amazonaws.com"},
+                "Action": "sts:AssumeRole"
+            }]
+        }
+        
+        # TODO: Create role with trust policy
+        
+        # Policy document with limited permissions
+        policy_document = {
+            "Version": "2012-10-17",
+            "Statement": [
+                {
+                    # TODO: Allow CloudWatch metrics and logs
+                    "Effect": "Allow",
+                    "Action": [
+                        "cloudwatch:PutMetricData",
+                        "logs:CreateLogGroup",
+                        "logs:CreateLogStream",
+                        "logs:PutLogEvents"
+                    ],
+                    "Resource": "*"
+                },
+                {
+                    # TODO: Allow S3 read/write with encryption requirement
+                    "Effect": "Allow",
+                    "Action": ["s3:GetObject", "s3:PutObject"],
+                    "Resource": "arn:aws:s3:::secure-lab-*/*",
+                    "Condition": {
+                        "StringEquals": {
+                            "s3:x-amz-server-side-encryption": "AES256"
+                        }
+                    }
+                },
+                {
+                    # TODO: Explicit deny for dangerous actions
+                    "Effect": "Deny",
+                    "Action": [
+                        "iam:*",
+                        "ec2:TerminateInstances",
+                        "s3:DeleteBucket"
+                    ],
+                    "Resource": "*"
+                }
+            ]
+        }
+        
+        # TODO: Create policy and attach to role
+        # TODO: Create instance profile for EC2
+        pass
+
+    def create_security_audit_role(self):
+        """
+        Create a role for security auditing with read-only permissions
+        
+        Returns:
+            Role ARN
+        """
+        role_name = "SecurityAuditRole"
+        
+        # Trust policy requiring MFA
+        trust_policy = {
+            "Version": "2012-10-17",
+            "Statement": [{
+                "Effect": "Allow",
+                "Principal": {"AWS": f"arn:aws:iam::{self.account_id}:root"},
+                "Action": "sts:AssumeRole",
+                "Condition": {
+                    "Bool": {"aws:MultiFactorAuthPresent": "true"}
+                }
+            }]
+        }
+        
+        # TODO: Create role with MFA-required trust policy
+        # TODO: Attach AWS managed SecurityAudit policy
+        # TODO: Create custom audit policy for additional services
+        pass
+
+    def analyze_policy_security(self, policy_document):
+        """
+        Analyze a policy document for security issues
+        
+        Args:
+            policy_document: Policy document as dictionary
+            
+        Returns:
+            List of security issues found
+        """
+        issues = []
+        
+        # TODO: Check for wildcard actions (Action: "*")
+        # TODO: Check for wildcard resources (Resource: "*")
+        # TODO: Check for missing conditions on sensitive actions
+        # TODO: Check for overly permissive principals
+        
+        return issues
+
+def main():
+    """Main execution function"""
+    # TODO: Initialize IAMSecurityManager
+    # TODO: Create EC2 security role
+    # TODO: Create security audit role
+    # TODO: Analyze existing policies
+    # TODO: Generate security report
+    pass
+
+if __name__ == "__main__":
+    main()
+Step 2.3: Execute IAM Configuration
+# Make script executable
+chmod +x iam_security_manager.py
+
+# Run the script
+python3 iam_security_manager.py
+
+# Verify created roles
+aws iam list-roles --query 'Roles[?contains(RoleName, `Secure`)].RoleName'
+
+# Verify created policies
+aws iam list-policies --scope Local --query 'Policies[?contains(PolicyName, `Secure`)].PolicyName'
+Task 3: Perform Security Assessment
+Step 3.1: Install Security Assessment Tools
+# Install Lynis for security auditing
+sudo apt install -y lynis
+
+# Install AWS security tools
+pip install prowler-cloud checkov
+Step 3.2: Run Infrastructure Security Scan
+Create security_scan.sh:
+
+#!/bin/bash
+# Security assessment script for AWS infrastructure
+
+# TODO: Run Checkov on Terraform files
+# checkov -d ~/aws-secure-infrastructure --framework terraform
+
+# TODO: Use AWS CLI to check security configurations
+# Check S3 bucket encryption
+# Check EC2 security groups for open ports
+# Check IAM password policy
+# Check CloudTrail status
+
+# TODO: Generate security report
+# Save findings to security_report.txt
+Step 3.3: Analyze Security Findings
+# Make script executable
+chmod +x security_scan.sh
+
+# Run security scan
+./security_scan.sh
+
+# Review findings
+cat security_report.txt
+Step 3.4: Implement Remediation
+Create remediation_script.py:
+
+#!/usr/bin/env python3
+"""
+Security remediation script for common AWS vulnerabilities
+"""
+
+import boto3
+import logging
+
+logger = logging.getLogger(__name__)
+
+def enable_s3_encryption(bucket_name):
+    """
+    Enable default encryption on S3 bucket
+    
+    Args:
+        bucket_name: Name of the S3 bucket
+    """
+    # TODO: Use boto3 S3 client
+    # TODO: Put bucket encryption configuration
+    # TODO: Set SSE-S3 (AES256) as default
+    pass
+
+def restrict_security_group(sg_id, port):
+    """
+    Restrict security group rule to specific CIDR
+    
+    Args:
+        sg_id: Security group ID
+        port: Port number to restrict
+    """
+    # TODO: Revoke overly permissive ingress rule
+    # TODO: Add restricted ingress rule with specific CIDR
+    pass
+
+def enable_cloudtrail_logging(trail_name, bucket_name):
+    """
+    Enable CloudTrail logging if not already enabled
+    
+    Args:
+        trail_name: Name of the CloudTrail trail
+        bucket_name: S3 bucket for logs
+    """
+    # TODO: Create or update CloudTrail
+    # TODO: Enable multi-region logging
+    # TODO: Enable log file validation
+    pass
+
+def enforce_iam_password_policy():
+    """
+    Enforce strong IAM password policy
+    """
+    # TODO: Update account password policy
+    # TODO: Set minimum length to 14 characters
+    # TODO: Require uppercase, lowercase, numbers, symbols
+    # TODO: Enable password expiration (90 days)
+    pass
+
+# TODO: Implement main() function to run all remediations
+Task 4: Implement Defense-in-Depth Security
+Step 4.1: Configure VPC Flow Logs
+# Create CloudWatch log group for VPC Flow Logs
+aws logs create-log-group --log-group-name /aws/vpc/flowlogs
+
+# TODO: Create IAM role for VPC Flow Logs
+# TODO: Enable VPC Flow Logs for your VPC
+# TODO: Configure log retention period
+Step 4.2: Setup AWS Config for Compliance
+Create config_setup.py:
+
+#!/usr/bin/env python3
+"""
+Setup AWS Config for continuous compliance monitoring
+"""
+
+import boto3
+
+def setup_aws_config(bucket_name, region='us-east-1'):
+    """
+    Configure AWS Config for compliance monitoring
+    
+    Args:
+        bucket_name: S3 bucket for Config snapshots
+        region: AWS region
+    """
+    # TODO: Create Config recorder
+    # TODO: Create delivery channel
+    # TODO: Enable Config rules for:
+    #   - encrypted-volumes
+    #   - s3-bucket-public-read-prohibited
+    #   - iam-password-policy
+    #   - cloudtrail-enabled
+    pass
+
+# TODO: Implement execution logic
+Step 4.3: Enable GuardDuty
+# Enable GuardDuty for threat detection
+aws guardduty create-detector --enable
+
+# Get detector ID
+DETECTOR_ID=$(aws guardduty list-detectors --query 'DetectorIds[0]' --output text)
+
+# TODO: Configure GuardDuty findings export to S3
+# TODO: Setup SNS notifications for high-severity findings
+Expected Outcomes
+After completing this lab, you should have:
+
+Secure AWS infrastructure deployed with Terraform following best practices
+IAM roles and policies configured with least privilege principle
+Security assessment reports identifying vulnerabilities
+Remediation scripts for common security issues
+Defense-in-depth security controls including VPC Flow Logs, AWS Config, and GuardDuty
+Understanding of cloud security automation and continuous monitoring
+Troubleshooting Tips
+Issue: Terraform apply fails with authentication error
+
+Solution: Verify AWS credentials with aws sts get-caller-identity
+Check that credentials have sufficient permissions for resource creation
+Issue: IAM policy creation fails with EntityAlreadyExists
+
+Solution: Delete existing policy or use a different name
+Command: aws iam delete-policy --policy-arn <policy-arn>
+Issue: Security group rules not applying correctly
+
+Solution: Check VPC ID matches your created VPC
+Verify CIDR blocks are in correct format (e.g., 10.0.0.0/16)
+Issue: Python script fails with NoCredentialsError
+
+Solution: Ensure AWS CLI is configured: aws configure
+Verify credentials file exists: cat ~/.aws/credentials
+Conclusion
+This lab demonstrated essential cloud security practices for AWS infrastructure. You learned to deploy secure infrastructure as code using Terraform, automate IAM management with Python, perform security assessments, and implement defense-in-depth strategies. These skills are critical for maintaining secure cloud environments in production.
+
+Key takeaways:
+
+Always follow the principle of least privilege for IAM
+Encrypt data at rest and in transit
+Implement multiple layers of security controls
+Automate security assessments and remediation
+Enable logging and monitoring for all critical resources
+Continue practicing these techniques and explore additional AWS security services like Security Hub, Inspector, and Macie for comprehensive cloud security management.
