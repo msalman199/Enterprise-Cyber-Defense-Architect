@@ -1,0 +1,426 @@
+Network Monitoring and Deep Packet Inspection
+Objectives
+By the end of this lab, students will be able to:
+
+Capture and analyze network traffic using Wireshark/tshark
+Perform packet inspection and filtering with Scapy
+Implement network monitoring using Zeek
+Identify network protocols and potential security threats
+Create custom packet analysis scripts
+Prerequisites
+Basic understanding of TCP/IP and OSI model
+Familiarity with Linux command line
+Basic Python programming knowledge
+Understanding of common network protocols (HTTP, DNS, TCP, UDP)
+Lab Environment
+Al Nafi provides ready-to-use Linux-based cloud machines for this lab. Click Start Lab to access your pre-configured environment with all necessary tools installed.
+
+Task 1: Network Traffic Capture with Wireshark
+Step 1: Install Required Tools
+# Update and install Wireshark and network tools
+sudo apt update
+sudo apt install -y wireshark tcpdump net-tools
+
+# Add user to wireshark group
+sudo usermod -a -G wireshark $USER
+
+# Verify installation
+tshark --version
+Step 2: Generate Sample Network Traffic
+# Create traffic generation script
+cat > generate_traffic.sh << 'EOF'
+#!/bin/bash
+echo "Generating network traffic..."
+curl -s http://httpbin.org/get > /dev/null &
+curl -s http://httpbin.org/post -d "test=data" > /dev/null &
+nslookup google.com > /dev/null &
+nslookup github.com > /dev/null &
+curl -s https://www.example.com > /dev/null &
+sleep 2
+echo "Traffic generation completed."
+EOF
+
+chmod +x generate_traffic.sh
+Step 3: Capture Network Traffic
+# Start packet capture for 30 seconds
+sudo tshark -i any -w /tmp/capture1.pcap -a duration:30 &
+
+# Generate traffic during capture
+sleep 5
+./generate_traffic.sh
+
+# Wait for capture to complete
+wait
+echo "Capture saved to /tmp/capture1.pcap"
+Step 4: Analyze Captured Traffic
+# Display capture statistics
+capinfos /tmp/capture1.pcap
+
+# Show first 10 packets
+tshark -r /tmp/capture1.pcap -c 10
+
+# Filter HTTP traffic
+tshark -r /tmp/capture1.pcap -Y "http" -T fields -e frame.number -e ip.src -e ip.dst -e http.request.method
+
+# Filter DNS traffic
+tshark -r /tmp/capture1.pcap -Y "dns" -T fields -e frame.number -e dns.qry.name -e dns.resp.addr
+
+# Protocol hierarchy statistics
+tshark -r /tmp/capture1.pcap -q -z io,phs
+Step 5: Create Advanced Analysis Script
+Create a script to perform comprehensive traffic analysis:
+
+cat > analyze_traffic.sh << 'EOF'
+#!/bin/bash
+# TODO: Add variables for PCAP file path
+# TODO: Implement TCP traffic analysis
+# TODO: Implement HTTP request filtering
+# TODO: Implement DNS query analysis
+# TODO: Generate conversation statistics
+# TODO: Export results to file
+EOF
+
+chmod +x analyze_traffic.sh
+Student Task: Complete the analysis script to extract and display:
+
+Top 10 source IPs by packet count
+All HTTP hosts accessed
+DNS queries and responses
+TCP connection statistics
+Task 2: Packet Analysis with Scapy
+Step 1: Install Scapy
+# Install Python3 and Scapy
+sudo apt install -y python3 python3-pip
+pip3 install scapy
+Step 2: Basic Packet Operations
+Create a Python script for packet creation and analysis:
+
+cat > scapy_basics.py << 'EOF'
+#!/usr/bin/env python3
+from scapy.all import *
+
+def create_sample_packets():
+    """
+    Create various packet types for demonstration.
+    
+    TODO: Create an ICMP packet to 8.8.8.8
+    TODO: Create a TCP SYN packet to port 80
+    TODO: Create a UDP DNS query packet
+    TODO: Display each packet using .show()
+    """
+    pass
+
+def analyze_pcap_file(filename):
+    """
+    Analyze a PCAP file and extract statistics.
+    
+    Args:
+        filename: Path to PCAP file
+    
+    TODO: Read the PCAP file using rdpcap()
+    TODO: Count total packets
+    TODO: Count packets by protocol (TCP, UDP, ICMP)
+    TODO: Extract source and destination IPs
+    TODO: Print summary statistics
+    """
+    pass
+
+def filter_packets(filename):
+    """
+    Filter packets based on specific criteria.
+    
+    Args:
+        filename: Path to PCAP file
+    
+    TODO: Filter HTTP packets (port 80)
+    TODO: Filter DNS packets (port 53)
+    TODO: Filter packets by source IP
+    TODO: Display filtered packet count
+    """
+    pass
+
+if __name__ == "__main__":
+    create_sample_packets()
+    analyze_pcap_file("/tmp/capture1.pcap")
+    filter_packets("/tmp/capture1.pcap")
+EOF
+
+chmod +x scapy_basics.py
+Student Task: Complete the functions to:
+
+Create and display different packet types
+Read and analyze the captured PCAP file
+Implement packet filtering by protocol and IP
+Step 3: Deep Packet Inspection
+Create an advanced analysis script:
+
+cat > deep_inspection.py << 'EOF'
+#!/usr/bin/env python3
+from scapy.all import *
+from collections import defaultdict
+
+def analyze_traffic_flows(packets):
+    """
+    Analyze traffic flows between hosts.
+    
+    Args:
+        packets: List of packets from rdpcap()
+    
+    TODO: Create flow dictionary (src:port -> dst:port)
+    TODO: Count packets per flow
+    TODO: Calculate bytes per flow
+    TODO: Return top 10 flows by packet count
+    """
+    pass
+
+def inspect_payloads(packets):
+    """
+    Inspect packet payloads for content analysis.
+    
+    Args:
+        packets: List of packets
+    
+    TODO: Extract packets with Raw layer
+    TODO: Check for HTTP keywords in payload
+    TODO: Calculate average payload size
+    TODO: Identify payload patterns
+    """
+    pass
+
+def detect_anomalies(packets):
+    """
+    Detect potential security anomalies.
+    
+    Args:
+        packets: List of packets
+    
+    TODO: Detect port scanning (multiple SYN to different ports)
+    TODO: Identify suspicious ports (22, 23, 3389, etc.)
+    TODO: Detect large data transfers
+    TODO: Flag unusual protocol usage
+    """
+    pass
+
+def generate_report(packets):
+    """
+    Generate comprehensive analysis report.
+    
+    Args:
+        packets: List of packets
+    
+    TODO: Compile statistics from all analysis functions
+    TODO: Create JSON report structure
+    TODO: Save report to file
+    TODO: Print summary to console
+    """
+    pass
+
+if __name__ == "__main__":
+    packets = rdpcap("/tmp/capture1.pcap")
+    analyze_traffic_flows(packets)
+    inspect_payloads(packets)
+    detect_anomalies(packets)
+    generate_report(packets)
+EOF
+
+chmod +x deep_inspection.py
+Student Task: Implement deep packet inspection functions to:
+
+Track and analyze traffic flows
+Inspect payload content
+Detect potential security threats
+Generate a comprehensive JSON report
+Task 3: Network Monitoring with Zeek
+Step 1: Install Zeek
+# Install dependencies
+sudo apt install -y cmake make gcc g++ flex bison libpcap-dev libssl-dev python3-dev swig zlib1g-dev
+
+# Download and install Zeek
+cd /tmp
+wget https://download.zeek.org/zeek-4.2.1.tar.gz
+tar -xzf zeek-4.2.1.tar.gz
+cd zeek-4.2.1
+./configure --prefix=/opt/zeek
+make -j$(nproc)
+sudo make install
+
+# Add to PATH
+echo 'export PATH=/opt/zeek/bin:$PATH' >> ~/.bashrc
+source ~/.bashrc
+Step 2: Basic Zeek Configuration
+# Create working directory
+mkdir -p ~/zeek_analysis
+cd ~/zeek_analysis
+
+# Create basic configuration
+cat > local.zeek << 'EOF'
+@load base/protocols/conn
+@load base/protocols/dns
+@load base/protocols/http
+@load base/protocols/ssl
+
+# Enable JSON logging
+redef LogAscii::use_json = T;
+EOF
+Step 3: Analyze Traffic with Zeek
+# Run Zeek on captured traffic
+/opt/zeek/bin/zeek -r /tmp/capture1.pcap local.zeek
+
+# View generated logs
+ls -la *.log
+
+# Display connection log
+cat conn.log | head -5
+
+# Display DNS log
+cat dns.log | head -5
+
+# Display HTTP log
+cat http.log | head -5
+Step 4: Create Custom Zeek Scripts
+Create a custom detection script:
+
+cat > custom_detection.zeek << 'EOF'
+# Custom network detection script
+
+@load base/frameworks/notice
+
+module CustomDetection;
+
+export {
+    redef enum Notice::Type += {
+        Port_Scan_Detected,
+        Suspicious_User_Agent,
+        Large_Data_Transfer
+    };
+}
+
+# TODO: Implement port scan detection
+# Track connections per source IP to different ports
+# Generate notice if threshold exceeded
+
+# TODO: Implement suspicious user agent detection
+# Check HTTP user agents for scanning tools
+# Generate notice for suspicious patterns
+
+# TODO: Implement large transfer detection
+# Monitor connection byte counts
+# Alert on transfers exceeding threshold
+
+event connection_established(c: connection) {
+    # TODO: Implement connection tracking logic
+}
+
+event http_request(c: connection, method: string, original_URI: string, 
+                  unescaped_URI: string, version: string) {
+    # TODO: Implement HTTP analysis logic
+}
+
+event connection_state_remove(c: connection) {
+    # TODO: Implement transfer size checking
+}
+EOF
+Student Task: Complete the Zeek script to:
+
+Track connections and detect port scanning
+Identify suspicious HTTP user agents
+Alert on large data transfers
+Generate notices for detected anomalies
+Step 5: Create Log Analysis Tool
+cat > zeek_analyzer.py << 'EOF'
+#!/usr/bin/env python3
+import json
+from collections import Counter
+
+def analyze_connections(log_file):
+    """
+    Analyze Zeek connection logs.
+    
+    Args:
+        log_file: Path to conn.log
+    
+    TODO: Read and parse JSON log entries
+    TODO: Count connections by protocol
+    TODO: Identify top talkers (source IPs)
+    TODO: Calculate connection duration statistics
+    """
+    pass
+
+def analyze_dns(log_file):
+    """
+    Analyze Zeek DNS logs.
+    
+    Args:
+        log_file: Path to dns.log
+    
+    TODO: Parse DNS query records
+    TODO: Count queries by domain
+    TODO: Identify query types (A, AAAA, MX, etc.)
+    TODO: Detect potential DNS tunneling
+    """
+    pass
+
+def analyze_http(log_file):
+    """
+    Analyze Zeek HTTP logs.
+    
+    Args:
+        log_file: Path to http.log
+    
+    TODO: Parse HTTP request records
+    TODO: Count requests by host
+    TODO: Analyze HTTP methods
+    TODO: Extract user agents
+    TODO: Identify status codes
+    """
+    pass
+
+def generate_summary_report():
+    """
+    Generate comprehensive summary report.
+    
+    TODO: Combine analysis from all log types
+    TODO: Create summary statistics
+    TODO: Identify top findings
+    TODO: Export to JSON and text formats
+    """
+    pass
+
+if __name__ == "__main__":
+    analyze_connections("conn.log")
+    analyze_dns("dns.log")
+    analyze_http("http.log")
+    generate_summary_report()
+EOF
+
+chmod +x zeek_analyzer.py
+Student Task: Implement the log analyzer to:
+
+Parse Zeek JSON logs
+Extract and analyze connection patterns
+Identify DNS and HTTP activity
+Generate comprehensive reports
+Expected Outcomes
+After completing this lab, students should have:
+
+Captured and analyzed network traffic using multiple tools
+Created custom packet analysis scripts in Python
+Implemented network monitoring with Zeek
+Identified various network protocols and their characteristics
+Detected potential security anomalies in network traffic
+Generated comprehensive network analysis reports
+Troubleshooting Tips
+Issue: Permission denied when capturing packets
+
+Solution: Ensure user is in wireshark group: sudo usermod -a -G wireshark $USER and log out/in
+Issue: Scapy cannot read PCAP file
+
+Solution: Check file path and permissions: ls -la /tmp/capture1.pcap
+Issue: Zeek not found after installation
+
+Solution: Source bashrc or add to PATH: export PATH=/opt/zeek/bin:$PATH
+Issue: No packets captured
+
+Solution: Verify network interface: ip link show and use correct interface name
+Conclusion
+This lab provided hands-on experience with network monitoring and deep packet inspection using industry-standard tools. Students learned to capture traffic with Wireshark, perform programmatic analysis with Scapy, and implement comprehensive monitoring with Zeek. These skills are essential for network security analysis, troubleshooting, and forensic investigations. The combination of GUI tools, scripting capabilities, and real-time monitoring provides a complete toolkit for network analysis professionals.
