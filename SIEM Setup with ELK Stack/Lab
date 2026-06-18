@@ -1,0 +1,392 @@
+SIEM Setup with ELK Stack
+Objectives
+By the end of this lab, students will be able to:
+
+Install and configure the ELK Stack (Elasticsearch, Logstash, Kibana) on Linux
+Integrate Wazuh for host-based intrusion detection and log collection
+Develop a Python script to automate log aggregation and analysis
+Create custom Kibana dashboards for security event visualization
+Analyze security logs and identify potential threats using SIEM tools
+Prerequisites
+Basic Linux command line proficiency
+Understanding of system logs and log formats
+Familiarity with JSON data structures
+Basic Python programming knowledge
+Understanding of network security concepts
+Lab Environment
+Al Nafi Cloud Machine: Click Start Lab to access your pre-configured Ubuntu 20.04 LTS environment. All tasks run on this single machine.
+
+System Specifications:
+
+Ubuntu 20.04 LTS
+8GB RAM minimum
+50GB disk space
+Internet connectivity required
+Task 1: Install and Configure ELK Stack
+Step 1: System Preparation
+Update system and install Java (required for ELK):
+
+sudo apt update && sudo apt upgrade -y
+sudo apt install openjdk-11-jdk curl wget gnupg2 apt-transport-https -y
+java -version
+Step 2: Install Elasticsearch
+Add repository and install:
+
+curl -fsSL https://artifacts.elastic.co/GPG-KEY-elasticsearch | sudo gpg --dearmor -o /usr/share/keyrings/elastic.gpg
+
+echo "deb [signed-by=/usr/share/keyrings/elastic.gpg] https://artifacts.elastic.co/packages/7.x/apt stable main" | sudo tee /etc/apt/sources.list.d/elastic-7.x.list
+
+sudo apt update
+sudo apt install elasticsearch -y
+Configure Elasticsearch (sudo nano /etc/elasticsearch/elasticsearch.yml):
+
+cluster.name: siem-cluster
+node.name: siem-node-1
+network.host: localhost
+http.port: 9200
+discovery.type: single-node
+xpack.security.enabled: false
+Set JVM heap size (sudo nano /etc/elasticsearch/jvm.options):
+
+-Xms2g
+-Xmx2g
+Start service:
+
+sudo systemctl enable elasticsearch
+sudo systemctl start elasticsearch
+curl -X GET "localhost:9200/"
+Step 3: Install Kibana
+Install and configure:
+
+sudo apt install kibana -y
+Edit configuration (sudo nano /etc/kibana/kibana.yml):
+
+server.port: 5601
+server.host: "localhost"
+elasticsearch.hosts: ["http://localhost:9200"]
+Start service:
+
+sudo systemctl enable kibana
+sudo systemctl start kibana
+Wait 2-3 minutes, then verify: curl -I http://localhost:5601
+
+Step 4: Install Logstash
+Install and create pipeline configuration:
+
+sudo apt install logstash -y
+Create configuration (sudo nano /etc/logstash/conf.d/siem-pipeline.conf):
+
+input {
+  beats {
+    port => 5044
+  }
+  file {
+    path => "/var/log/auth.log"
+    start_position => "beginning"
+    tags => ["auth"]
+  }
+}
+
+filter {
+  if "auth" in [tags] {
+    grok {
+      match => { "message" => "%{SYSLOGTIMESTAMP:timestamp} %{IPORHOST:host} %{DATA:program}(?:\[%{POSINT:pid}\])?: %{GREEDYDATA:auth_message}" }
+    }
+  }
+}
+
+output {
+  elasticsearch {
+    hosts => ["localhost:9200"]
+    index => "siem-logs-%{+YYYY.MM.dd}"
+  }
+}
+Start service:
+
+sudo systemctl enable logstash
+sudo systemctl start logstash
+Task 2: Integrate Wazuh for Log Collection
+Step 1: Install Wazuh
+Add repository:
+
+curl -s https://packages.wazuh.com/key/GPG-KEY-WAZUH | sudo gpg --no-default-keyring --keyring gnupg-ring:/usr/share/keyrings/wazuh.gpg --import
+sudo chmod 644 /usr/share/keyrings/wazuh.gpg
+
+echo "deb [signed-by=/usr/share/keyrings/wazuh.gpg] https://packages.wazuh.com/4.x/apt/ stable main" | sudo tee /etc/apt/sources.list.d/wazuh.list
+Install manager and agent:
+
+sudo apt update
+sudo apt install wazuh-manager wazuh-agent -y
+Step 2: Configure Wazuh
+Edit manager configuration (sudo nano /var/ossec/etc/ossec.conf) to add log monitoring:
+
+<localfile>
+  <log_format>syslog</log_format>
+  <location>/var/log/auth.log</location>
+</localfile>
+
+<localfile>
+  <log_format>syslog</log_format>
+  <location>/var/log/syslog</location>
+</localfile>
+Start services:
+
+sudo systemctl enable wazuh-manager wazuh-agent
+sudo systemctl start wazuh-manager wazuh-agent
+Step 3: Configure Filebeat for Wazuh-ELK Integration
+Install Filebeat:
+
+sudo apt install filebeat -y
+Configure (sudo nano /etc/filebeat/filebeat.yml):
+
+filebeat.inputs:
+- type: log
+  enabled: true
+  paths:
+    - /var/ossec/logs/alerts/alerts.json
+  json.keys_under_root: true
+
+output.logstash:
+  hosts: ["localhost:5044"]
+Start Filebeat:
+
+sudo systemctl enable filebeat
+sudo systemctl start filebeat
+Task 3: Develop Python Log Aggregation Script
+Step 1: Setup Python Environment
+Create project directory and virtual environment:
+
+mkdir ~/siem-automation && cd ~/siem-automation
+python3 -m venv siem-env
+source siem-env/bin/activate
+pip install elasticsearch requests python-dateutil schedule
+Step 2: Create Log Aggregation Script Template
+Create log_aggregator.py:
+
+#!/usr/bin/env python3
+"""
+SIEM Log Aggregation Script
+Students: Complete the TODO sections to implement full functionality
+"""
+
+import json
+import logging
+from datetime import datetime
+from elasticsearch import Elasticsearch
+
+# Configure logging
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(levelname)s - %(message)s'
+)
+
+class SIEMLogAggregator:
+    def __init__(self):
+        """Initialize Elasticsearch connection and log sources"""
+        # TODO: Initialize Elasticsearch client connecting to localhost:9200
+        # TODO: Define list of log file paths to monitor
+        pass
+    
+    def check_elasticsearch_connection(self):
+        """
+        Verify Elasticsearch is accessible
+        Returns: Boolean indicating connection status
+        """
+        # TODO: Implement connection check using es.ping()
+        # TODO: Log success or failure
+        pass
+    
+    def parse_auth_log(self, line):
+        """
+        Parse authentication log entries
+        Args:
+            line: Single line from auth.log
+        Returns:
+            Dictionary with parsed fields or None
+        """
+        # TODO: Use regex to extract timestamp, host, user, IP
+        # TODO: Identify event type (ssh_success, ssh_failed, sudo_command)
+        # TODO: Return structured dictionary with parsed data
+        pass
+    
+    def parse_syslog(self, line):
+        """
+        Parse system log entries
+        Args:
+            line: Single line from syslog
+        Returns:
+            Dictionary with parsed fields or None
+        """
+        # TODO: Extract timestamp, host, process, pid, message
+        # TODO: Return structured dictionary
+        pass
+    
+    def process_log_file(self, file_path):
+        """
+        Read and process log file
+        Args:
+            file_path: Path to log file
+        """
+        # TODO: Open and read log file
+        # TODO: Parse each line based on file type
+        # TODO: Call index_log_entry for each parsed entry
+        pass
+    
+    def index_log_entry(self, log_data, source_file):
+        """
+        Index parsed log entry into Elasticsearch
+        Args:
+            log_data: Dictionary with parsed log data
+            source_file: Source file path
+        """
+        # TODO: Add @timestamp and source metadata
+        # TODO: Generate index name: siem-logs-YYYY.MM.DD
+        # TODO: Index document using self.es.index()
+        pass
+    
+    def generate_security_report(self):
+        """
+        Query Elasticsearch and generate security report
+        Returns:
+            Dictionary with report data
+        """
+        # TODO: Query for failed SSH attempts in last 24 hours
+        # TODO: Aggregate by IP address
+        # TODO: Return report with top attacking IPs
+        pass
+    
+    def run_aggregation(self):
+        """Main execution method"""
+        # TODO: Check Elasticsearch connection
+        # TODO: Process each log file in self.log_sources
+        # TODO: Generate security report
+        pass
+
+def main():
+    """Entry point for script execution"""
+    # TODO: Create SIEMLogAggregator instance
+    # TODO: Call run_aggregation method
+    # TODO: Add error handling
+    pass
+
+if __name__ == "__main__":
+    main()
+Step 3: Test Script Execution
+Make script executable and run:
+
+chmod +x log_aggregator.py
+python3 log_aggregator.py
+Step 4: Create Automated Scheduling Script
+Create scheduler.py:
+
+#!/usr/bin/env python3
+"""
+Automated scheduler for log aggregation
+Students: Complete the scheduling logic
+"""
+
+import schedule
+import time
+from log_aggregator import SIEMLogAggregator
+
+def scheduled_aggregation():
+    """Function to run on schedule"""
+    # TODO: Create aggregator instance
+    # TODO: Run aggregation
+    # TODO: Handle exceptions
+    pass
+
+def main():
+    """Setup and run scheduler"""
+    # TODO: Schedule aggregation every 5 minutes
+    # TODO: Implement infinite loop with schedule.run_pending()
+    # TODO: Add sleep to prevent CPU overuse
+    pass
+
+if __name__ == "__main__":
+    main()
+Task 4: Create Kibana Dashboards
+Step 1: Access Kibana Interface
+Open browser and navigate to: http://localhost:5601
+
+Step 2: Create Index Pattern
+Navigate to Management > Stack Management > Index Patterns
+Click Create index pattern
+Enter pattern: siem-logs-*
+Select @timestamp as time field
+Click Create index pattern
+Step 3: Build Security Dashboard
+Create visualizations:
+
+Failed SSH Attempts (Line Chart):
+
+Go to Visualize > Create visualization > Line
+Select siem-logs-* index
+Y-axis: Count
+X-axis: Date Histogram on @timestamp
+Add filter: event_type: ssh_failed
+Top Attacking IPs (Data Table):
+
+Create Data Table visualization
+Metrics: Count
+Buckets: Terms aggregation on ip_address field
+Size: 10
+Authentication Events by Type (Pie Chart):
+
+Create Pie visualization
+Slice by: Terms on event_type field
+Step 4: Combine into Dashboard
+Go to Dashboard > Create dashboard
+Add all created visualizations
+Arrange and resize panels
+Save as "Security Monitoring Dashboard"
+Expected Outcomes
+After completing this lab, you should have:
+
+Functional ELK Stack with all services running
+Wazuh collecting and forwarding security logs
+Python script capable of parsing and indexing logs
+Kibana dashboard displaying security events
+Understanding of SIEM architecture and log analysis
+Verify success:
+
+# Check all services are running
+sudo systemctl status elasticsearch kibana logstash wazuh-manager filebeat
+
+# Query Elasticsearch for indexed logs
+curl -X GET "localhost:9200/siem-logs-*/_count"
+
+# View recent logs
+curl -X GET "localhost:9200/siem-logs-*/_search?size=5&pretty"
+Troubleshooting Tips
+Elasticsearch won't start:
+
+Check JVM heap size matches available RAM
+Verify disk space: df -h
+Review logs: sudo journalctl -u elasticsearch -n 50
+No logs appearing in Kibana:
+
+Verify Logstash is processing: sudo systemctl status logstash
+Check Filebeat connection: sudo filebeat test output
+Confirm log files exist and are readable
+Python script errors:
+
+Ensure virtual environment is activated
+Verify Elasticsearch connection: curl localhost:9200
+Check file permissions on log files
+Review script logs for specific error messages
+Kibana dashboard shows no data:
+
+Verify index pattern matches indexed data
+Check time range filter (expand to last 7 days)
+Confirm logs are being indexed: curl localhost:9200/_cat/indices?v
+Conclusion
+This lab provided hands-on experience building a complete SIEM solution using the ELK Stack and Wazuh. You learned to install and configure distributed logging infrastructure, integrate security monitoring tools, automate log processing with Python, and visualize security events through custom dashboards.
+
+Key takeaways:
+
+ELK Stack provides powerful log aggregation and analysis capabilities
+Wazuh enhances security monitoring with HIDS functionality
+Automation scripts improve efficiency and enable real-time monitoring
+Visualization helps identify security patterns and anomalies
+Continue exploring by adding more log sources, creating advanced queries, and developing custom alerting rules based on security events.
