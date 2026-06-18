@@ -1,0 +1,609 @@
+Cuckoo Sandbox Analysis
+Objectives
+By the end of this lab, students will be able to:
+
+Install and configure Cuckoo Sandbox for automated malware analysis
+Create Python scripts to automate sample submission and report retrieval
+Extract and analyze Indicators of Compromise (IoCs) from sandbox reports
+Interpret dynamic malware analysis results for threat hunting
+Implement batch analysis workflows for multiple samples
+Prerequisites
+Basic Linux command line proficiency
+Python programming fundamentals
+Understanding of malware analysis concepts
+Familiarity with JSON data structures
+Lab Environment
+Al Nafi Cloud Machine: This lab runs on a single Linux-based cloud machine. Click Start Lab to access your pre-configured Ubuntu 20.04 environment with 8GB RAM and 50GB storage.
+
+Task 1: Install and Configure Cuckoo Sandbox
+Step 1.1: Install System Dependencies
+Update your system and install required packages:
+
+# Update system
+sudo apt update && sudo apt upgrade -y
+
+# Install essential packages
+sudo apt install -y python3 python3-pip python3-venv mongodb postgresql
+sudo apt install -y tcpdump libffi-dev libssl-dev libjpeg-dev
+sudo apt install -y virtualbox-6.1
+
+# Create cuckoo user
+sudo adduser cuckoo --disabled-password --gecos ""
+sudo usermod -a -G vboxusers,pcap cuckoo
+Step 1.2: Set Up Cuckoo Environment
+Configure the Cuckoo working environment:
+
+# Switch to cuckoo user
+sudo su - cuckoo
+
+# Create and activate virtual environment
+python3 -m venv cuckoo-env
+source cuckoo-env/bin/activate
+
+# Install Cuckoo
+pip install --upgrade pip
+pip install cuckoo
+
+# Initialize Cuckoo
+cuckoo init
+Step 1.3: Configure Database
+Set up PostgreSQL as the database backend:
+
+# Exit cuckoo user temporarily
+exit
+
+# Configure PostgreSQL
+sudo -u postgres createuser cuckoo
+sudo -u postgres createdb cuckoo -O cuckoo
+sudo -u postgres psql -c "ALTER USER cuckoo PASSWORD 'cuckoo123';"
+
+# Return to cuckoo user
+sudo su - cuckoo
+source cuckoo-env/bin/activate
+Edit ~/.cuckoo/conf/cuckoo.conf and update the database section:
+
+[database]
+connection = postgresql://cuckoo:cuckoo123@localhost:5432/cuckoo
+Step 1.4: Configure Network Monitoring
+Enable packet capture capabilities:
+
+# Exit cuckoo user
+exit
+
+# Configure tcpdump permissions
+sudo setcap cap_net_raw,cap_net_admin=eip /usr/sbin/tcpdump
+sudo groupadd pcap
+sudo usermod -a -G pcap cuckoo
+sudo chgrp pcap /usr/sbin/tcpdump
+sudo chmod 750 /usr/sbin/tcpdump
+
+# Create host-only network
+sudo VBoxManage hostonlyif create
+sudo VBoxManage hostonlyif ipconfig vboxnet0 --ip 192.168.56.1 --netmask 255.255.255.0
+Step 1.5: Configure Cuckoo Settings
+Edit ~/.cuckoo/conf/cuckoo.conf:
+
+[resultserver]
+ip = 192.168.56.1
+port = 2042
+
+[processing]
+analysis_timeout = 300
+Edit ~/.cuckoo/conf/virtualbox.conf:
+
+[virtualbox]
+mode = headless
+interface = vboxnet0
+machines = win10_analysis
+
+[win10_analysis]
+label = win10_analysis
+platform = windows
+ip = 192.168.56.101
+Note: In a production environment, you would create a Windows VM snapshot. For this lab, we'll focus on the automation scripts.
+
+Task 2: Create Malware Analysis Automation Scripts
+Step 2.1: Build Sample Submission Script
+Create ~/cuckoo_submit.py:
+
+#!/usr/bin/env python3
+"""
+Cuckoo Sample Submission Script
+Students: Complete the TODO sections to implement functionality
+"""
+
+import os
+import sys
+import json
+import requests
+import argparse
+
+class CuckooSubmitter:
+    def __init__(self, host="127.0.0.1", port=8090):
+        """Initialize Cuckoo API connection"""
+        self.base_url = f"http://{host}:{port}"
+        self.session = requests.Session()
+    
+    def submit_file(self, file_path, options=None):
+        """
+        Submit a file for analysis
+        
+        Args:
+            file_path: Path to the file to analyze
+            options: Dictionary of analysis options
+        
+        Returns:
+            Task ID if successful, None otherwise
+        """
+        # TODO: Check if file exists
+        # TODO: Prepare the API endpoint URL
+        # TODO: Open file and prepare multipart form data
+        # TODO: Send POST request to Cuckoo API
+        # TODO: Parse response and extract task_id
+        # TODO: Return task_id or None on failure
+        pass
+    
+    def submit_url(self, url, options=None):
+        """
+        Submit a URL for analysis
+        
+        Args:
+            url: URL to analyze
+            options: Dictionary of analysis options
+        
+        Returns:
+            Task ID if successful, None otherwise
+        """
+        # TODO: Prepare API endpoint
+        # TODO: Create data payload with URL
+        # TODO: Send POST request
+        # TODO: Return task_id from response
+        pass
+    
+    def get_task_status(self, task_id):
+        """
+        Get the current status of a task
+        
+        Args:
+            task_id: The task ID to check
+        
+        Returns:
+            Status string or None
+        """
+        # TODO: Construct status check URL
+        # TODO: Send GET request
+        # TODO: Parse and return status
+        pass
+
+def main():
+    parser = argparse.ArgumentParser(description='Submit samples to Cuckoo')
+    parser.add_argument('--file', help='File to analyze')
+    parser.add_argument('--url', help='URL to analyze')
+    
+    args = parser.parse_args()
+    
+    # TODO: Create CuckooSubmitter instance
+    # TODO: Submit file or URL based on arguments
+    # TODO: Print task ID
+
+if __name__ == '__main__':
+    main()
+Step 2.2: Build Report Analysis Script
+Create ~/cuckoo_analyzer.py:
+
+#!/usr/bin/env python3
+"""
+Cuckoo Report Analyzer
+Students: Implement the analysis functions
+"""
+
+import json
+import requests
+import time
+import argparse
+
+class CuckooAnalyzer:
+    def __init__(self, host="127.0.0.1", port=8090):
+        """Initialize analyzer"""
+        self.base_url = f"http://{host}:{port}"
+        self.session = requests.Session()
+    
+    def wait_for_completion(self, task_id, timeout=1800):
+        """
+        Wait for analysis to complete
+        
+        Args:
+            task_id: Task to monitor
+            timeout: Maximum wait time in seconds
+        
+        Returns:
+            True if completed, False otherwise
+        """
+        # TODO: Implement polling loop
+        # TODO: Check status every 30 seconds
+        # TODO: Return True when status is 'reported'
+        # TODO: Handle timeout and failures
+        pass
+    
+    def get_report(self, task_id, format='json'):
+        """
+        Retrieve analysis report
+        
+        Args:
+            task_id: Task ID
+            format: Report format (json, html, pdf)
+        
+        Returns:
+            Report data
+        """
+        # TODO: Construct report URL
+        # TODO: Send GET request
+        # TODO: Return parsed JSON or raw content
+        pass
+    
+    def extract_network_iocs(self, report):
+        """
+        Extract network indicators from report
+        
+        Args:
+            report: JSON report data
+        
+        Returns:
+            Dictionary of network IoCs
+        """
+        iocs = {
+            'dns_requests': [],
+            'http_requests': [],
+            'tcp_connections': [],
+            'contacted_ips': []
+        }
+        
+        # TODO: Parse report['network']['dns'] for DNS requests
+        # TODO: Parse report['network']['http'] for HTTP traffic
+        # TODO: Parse report['network']['tcp'] for connections
+        # TODO: Extract unique IP addresses
+        
+        return iocs
+    
+    def extract_file_iocs(self, report):
+        """
+        Extract file-based indicators
+        
+        Args:
+            report: JSON report data
+        
+        Returns:
+            Dictionary of file IoCs
+        """
+        iocs = {
+            'file_hashes': {},
+            'dropped_files': [],
+            'modified_files': []
+        }
+        
+        # TODO: Extract MD5, SHA1, SHA256 from report['target']['file']
+        # TODO: Parse report['dropped'] for dropped files
+        # TODO: Parse report['behavior']['summary']['files']
+        
+        return iocs
+    
+    def extract_process_iocs(self, report):
+        """
+        Extract process and behavior indicators
+        
+        Args:
+            report: JSON report data
+        
+        Returns:
+            Dictionary of process IoCs
+        """
+        iocs = {
+            'processes': [],
+            'command_lines': [],
+            'registry_keys': []
+        }
+        
+        # TODO: Parse report['behavior']['processes']
+        # TODO: Extract process names and PIDs
+        # TODO: Extract command line arguments
+        # TODO: Parse registry modifications
+        
+        return iocs
+    
+    def generate_summary(self, report):
+        """
+        Generate analysis summary
+        
+        Args:
+            report: JSON report data
+        
+        Returns:
+            Summary dictionary
+        """
+        summary = {
+            'score': 0,
+            'signatures': [],
+            'severity': 'unknown'
+        }
+        
+        # TODO: Extract report['info']['score']
+        # TODO: Parse report['signatures'] for triggered signatures
+        # TODO: Determine severity based on score
+        
+        return summary
+
+def main():
+    parser = argparse.ArgumentParser(description='Analyze Cuckoo reports')
+    parser.add_argument('task_id', type=int, help='Task ID to analyze')
+    parser.add_argument('--wait', action='store_true', help='Wait for completion')
+    parser.add_argument('--output', help='Output file for IoCs')
+    
+    args = parser.parse_args()
+    
+    # TODO: Create CuckooAnalyzer instance
+    # TODO: Wait for completion if requested
+    # TODO: Get report
+    # TODO: Extract all IoCs
+    # TODO: Generate summary
+    # TODO: Save results to file
+
+if __name__ == '__main__':
+    main()
+Step 2.3: Create Batch Processing Script
+Create ~/batch_analyzer.py:
+
+#!/usr/bin/env python3
+"""
+Batch Sample Analyzer
+Students: Implement batch processing logic
+"""
+
+import os
+import glob
+import json
+import time
+from pathlib import Path
+
+class BatchAnalyzer:
+    def __init__(self, output_dir="./reports"):
+        """Initialize batch analyzer"""
+        self.output_dir = Path(output_dir)
+        self.output_dir.mkdir(exist_ok=True)
+        self.results = []
+    
+    def scan_directory(self, sample_dir, patterns=['*.exe', '*.dll', '*.ps1']):
+        """
+        Scan directory for samples
+        
+        Args:
+            sample_dir: Directory to scan
+            patterns: File patterns to match
+        
+        Returns:
+            List of file paths
+        """
+        # TODO: Use glob to find matching files
+        # TODO: Return list of absolute paths
+        pass
+    
+    def submit_batch(self, file_list):
+        """
+        Submit multiple files for analysis
+        
+        Args:
+            file_list: List of file paths
+        
+        Returns:
+            List of task IDs
+        """
+        # TODO: Loop through files
+        # TODO: Submit each file using CuckooSubmitter
+        # TODO: Store task_id and filename mapping
+        # TODO: Return list of task information
+        pass
+    
+    def monitor_batch(self, task_list, check_interval=60):
+        """
+        Monitor multiple tasks
+        
+        Args:
+            task_list: List of task information
+            check_interval: Seconds between checks
+        
+        Returns:
+            Lists of completed and failed tasks
+        """
+        # TODO: Implement monitoring loop
+        # TODO: Check status of all tasks periodically
+        # TODO: Track completed and failed tasks
+        # TODO: Return when all tasks finish
+        pass
+    
+    def generate_batch_report(self, completed_tasks):
+        """
+        Generate comprehensive batch report
+        
+        Args:
+            completed_tasks: List of completed task info
+        
+        Returns:
+            Aggregated report dictionary
+        """
+        batch_report = {
+            'total_analyzed': len(completed_tasks),
+            'high_risk_samples': [],
+            'unique_iocs': {
+                'domains': set(),
+                'ips': set(),
+                'file_hashes': set()
+            },
+            'common_behaviors': {}
+        }
+        
+        # TODO: Retrieve reports for all tasks
+        # TODO: Aggregate IoCs across all samples
+        # TODO: Identify high-risk samples (score > 7)
+        # TODO: Find common behaviors/signatures
+        
+        return batch_report
+
+def main():
+    # TODO: Parse command line arguments
+    # TODO: Create BatchAnalyzer instance
+    # TODO: Scan directory for samples
+    # TODO: Submit batch
+    # TODO: Monitor progress
+    # TODO: Generate and save batch report
+    pass
+
+if __name__ == '__main__':
+    main()
+Step 2.4: Create Test Sample Generator
+Create ~/generate_test_samples.py:
+
+#!/usr/bin/env python3
+"""
+Test Sample Generator
+Creates harmless test files for analysis practice
+"""
+
+import os
+import zipfile
+from pathlib import Path
+
+class TestSampleGenerator:
+    def __init__(self, output_dir="./test_samples"):
+        """Initialize generator"""
+        self.output_dir = Path(output_dir)
+        self.output_dir.mkdir(exist_ok=True)
+    
+    def create_suspicious_script(self):
+        """Create a PowerShell test script"""
+        script = '''# Harmless test script
+Write-Host "Test analysis sample"
+Get-Process | Select-Object -First 5
+$env:TEMP
+'''
+        filepath = self.output_dir / "test_script.ps1"
+        # TODO: Write script to file
+        # TODO: Return filepath
+        pass
+    
+    def create_network_sample(self):
+        """Create Python script that makes network requests"""
+        script = '''#!/usr/bin/env python3
+import socket
+import time
+
+# Harmless network test
+try:
+    socket.gethostbyname("example.com")
+    print("Network test completed")
+except:
+    pass
+'''
+        filepath = self.output_dir / "network_test.py"
+        # TODO: Write script to file
+        # TODO: Make executable
+        # TODO: Return filepath
+        pass
+    
+    def create_document_sample(self):
+        """Create a test document"""
+        filepath = self.output_dir / "test_doc.zip"
+        # TODO: Create simple ZIP file
+        # TODO: Add text content
+        # TODO: Return filepath
+        pass
+
+def main():
+    # TODO: Create generator instance
+    # TODO: Generate all test samples
+    # TODO: Print created files
+    pass
+
+if __name__ == '__main__':
+    main()
+Task 3: Perform Analysis and Extract IoCs
+Step 3.1: Start Cuckoo Services
+Start the Cuckoo daemon and web interface:
+
+# In terminal 1 - Start Cuckoo daemon
+sudo su - cuckoo
+source cuckoo-env/bin/activate
+cuckoo -d
+
+# In terminal 2 - Start web interface
+sudo su - cuckoo
+source cuckoo-env/bin/activate
+cuckoo web runserver 0.0.0.0:8080
+Step 3.2: Generate and Submit Test Samples
+Create test samples and submit for analysis:
+
+# Generate test samples
+python3 ~/generate_test_samples.py
+
+# Submit a sample
+python3 ~/cuckoo_submit.py --file ./test_samples/test_script.ps1
+Step 3.3: Analyze Results
+Wait for analysis and extract IoCs:
+
+# Analyze report (replace TASK_ID with actual ID)
+python3 ~/cuckoo_analyzer.py TASK_ID --wait --output iocs.json
+
+# View extracted IoCs
+cat iocs.json | python3 -m json.tool
+Step 3.4: Perform Batch Analysis
+Analyze multiple samples:
+
+# Run batch analysis
+python3 ~/batch_analyzer.py --directory ./test_samples --output ./batch_reports
+
+# Review batch report
+cat ./batch_reports/batch_summary.json
+Expected Outcomes
+After completing this lab, you should have:
+
+A functional Cuckoo Sandbox installation
+Python scripts for automated sample submission
+Scripts for extracting and analyzing IoCs
+Batch processing capabilities for multiple samples
+Understanding of dynamic malware analysis workflows
+Key Skills Acquired:
+
+Automated malware analysis pipeline creation
+IoC extraction and correlation
+Report parsing and data aggregation
+Threat intelligence generation
+Troubleshooting Tips
+Issue: Cuckoo fails to start
+
+Solution: Check PostgreSQL is running: sudo systemctl status postgresql
+Verify database connection in ~/.cuckoo/conf/cuckoo.conf
+Issue: Cannot submit samples
+
+Solution: Ensure Cuckoo web interface is running on port 8090
+Check API endpoint: curl http://127.0.0.1:8090/tasks/list
+Issue: Analysis times out
+
+Solution: Increase timeout in configuration
+Verify VM network connectivity to host
+Issue: No network traffic captured
+
+Solution: Check tcpdump permissions: getcap /usr/sbin/tcpdump
+Verify host-only network configuration
+Conclusion
+This lab introduced automated malware analysis using Cuckoo Sandbox. You learned to install and configure the platform, create Python automation scripts for sample submission and analysis, and extract actionable threat intelligence from sandbox reports. These skills are essential for security operations centers, incident response teams, and threat hunting activities.
+
+Key Takeaways:
+
+Dynamic analysis reveals runtime behavior that static analysis misses
+Automation is critical for analyzing large sample volumes
+IoC extraction enables threat correlation and detection
+Sandbox analysis integrates into broader security workflows
+Next Steps:
+
+Integrate with YARA rules for signature-based detection
+Connect to threat intelligence platforms
+Implement automated response actions based on analysis results
+Explore memory forensics with Volatility integration
