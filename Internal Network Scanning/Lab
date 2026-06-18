@@ -1,0 +1,552 @@
+Internal Network Scanning
+Objectives
+By the end of this lab, students will be able to:
+
+Understand the fundamentals of internal network scanning and its importance in cybersecurity
+Perform comprehensive internal network scans using Nmap with various scanning techniques
+Create and execute Python scripts to automate vulnerability scanning processes
+Analyze scanning results using Kibana for effective data visualization and threat assessment
+Identify common network vulnerabilities and security weaknesses in internal infrastructure
+Implement best practices for internal network reconnaissance and vulnerability assessment
+Prerequisites
+Before starting this lab, students should have:
+
+Basic understanding of networking concepts (IP addresses, ports, protocols)
+Familiarity with Linux command-line interface
+Basic knowledge of Python programming
+Understanding of cybersecurity fundamentals
+Experience with text editors in Linux environment
+Lab Environment Setup
+Al Nafi Cloud Machine: This lab runs entirely on a single Linux-based cloud machine provided by Al Nafi. Simply click Start Lab to access your pre-configured environment. No additional VM setup or configuration is required.
+
+Your cloud machine comes pre-installed with:
+
+Ubuntu 20.04 LTS
+Nmap
+Python 3.8+
+Elasticsearch and Kibana
+Required Python libraries
+Sample network services for testing
+Task 1: Perform Internal Network Scans Using Nmap
+Subtask 1.1: Basic Network Discovery
+First, let's identify the network range and discover active hosts on our internal network.
+
+Step 1: Open a terminal and check your current network configuration:
+
+ip addr show
+Step 2: Identify your network range. Look for the inet address (typically something like 192.168.1.0/24 or 10.0.0.0/24).
+
+Step 3: Perform a basic ping sweep to discover active hosts:
+
+nmap -sn 192.168.1.0/24
+Note: Replace 192.168.1.0/24 with your actual network range identified in Step 2.
+
+Step 4: Save the results to a file for later analysis:
+
+nmap -sn 192.168.1.0/24 > network_discovery.txt
+Subtask 1.2: Port Scanning Techniques
+Now we'll perform various types of port scans to identify open services.
+
+Step 1: Perform a basic TCP SYN scan on discovered hosts:
+
+nmap -sS 192.168.1.1-254
+Step 2: Conduct a comprehensive scan with service version detection:
+
+nmap -sV -O 192.168.1.1-254
+Step 3: Perform a UDP scan to identify UDP services:
+
+sudo nmap -sU --top-ports 100 192.168.1.1-254
+Step 4: Execute an aggressive scan with script scanning:
+
+nmap -A -T4 192.168.1.1-254
+Subtask 1.3: Targeted Vulnerability Scanning
+Let's use Nmap's scripting engine to identify specific vulnerabilities.
+
+Step 1: Update Nmap script database:
+
+sudo nmap --script-updatedb
+Step 2: Scan for common vulnerabilities:
+
+nmap --script vuln 192.168.1.1-254
+Step 3: Scan for specific service vulnerabilities (example with SSH):
+
+nmap --script ssh-* 192.168.1.1-254 -p 22
+Step 4: Create a comprehensive scan report:
+
+nmap -A -T4 --script vuln -oA comprehensive_scan 192.168.1.1-254
+This creates three output files: comprehensive_scan.nmap, comprehensive_scan.xml, and comprehensive_scan.gnmap.
+
+Task 2: Create Python Script for Automated Vulnerability Scanning
+Subtask 2.1: Install Required Python Libraries
+Step 1: Install necessary Python packages:
+
+pip3 install python-nmap requests beautifulsoup4 elasticsearch
+Step 2: Verify installation:
+
+python3 -c "import nmap; print('python-nmap installed successfully')"
+Subtask 2.2: Create the Vulnerability Scanner Script
+Step 1: Create a new Python script file:
+
+nano vulnerability_scanner.py
+Step 2: Add the following comprehensive vulnerability scanner code:
+
+#!/usr/bin/env python3
+
+import nmap
+import json
+import datetime
+import subprocess
+import re
+import socket
+from elasticsearch import Elasticsearch
+import argparse
+import sys
+
+class VulnerabilityScanner:
+    def __init__(self, target_range, output_file="scan_results.json"):
+        self.target_range = target_range
+        self.output_file = output_file
+        self.nm = nmap.PortScanner()
+        self.results = {
+            "scan_info": {
+                "timestamp": datetime.datetime.now().isoformat(),
+                "target_range": target_range,
+                "scanner_version": "1.0"
+            },
+            "hosts": []
+        }
+        
+    def discover_hosts(self):
+        """Discover active hosts in the network"""
+        print(f"[+] Discovering hosts in range: {self.target_range}")
+        try:
+            self.nm.scan(hosts=self.target_range, arguments='-sn')
+            active_hosts = []
+            
+            for host in self.nm.all_hosts():
+                if self.nm[host].state() == 'up':
+                    active_hosts.append(host)
+                    print(f"[+] Found active host: {host}")
+                    
+            return active_hosts
+        except Exception as e:
+            print(f"[-] Error during host discovery: {e}")
+            return []
+    
+    def port_scan(self, host):
+        """Perform comprehensive port scan on a host"""
+        print(f"[+] Scanning ports on {host}")
+        try:
+            # Scan top 1000 ports with service detection
+            self.nm.scan(host, arguments='-sV -sC -O -T4 --top-ports 1000')
+            
+            host_info = {
+                "ip": host,
+                "hostname": self.get_hostname(host),
+                "state": self.nm[host].state(),
+                "ports": [],
+                "os_info": self.get_os_info(host),
+                "vulnerabilities": []
+            }
+            
+            # Extract port information
+            for protocol in self.nm[host].all_protocols():
+                ports = self.nm[host][protocol].keys()
+                for port in ports:
+                    port_info = self.nm[host][protocol][port]
+                    host_info["ports"].append({
+                        "port": port,
+                        "protocol": protocol,
+                        "state": port_info['state'],
+                        "service": port_info.get('name', 'unknown'),
+                        "version": port_info.get('version', 'unknown'),
+                        "product": port_info.get('product', 'unknown')
+                    })
+            
+            return host_info
+            
+        except Exception as e:
+            print(f"[-] Error scanning {host}: {e}")
+            return None
+    
+    def get_hostname(self, ip):
+        """Get hostname for IP address"""
+        try:
+            return socket.gethostbyaddr(ip)[0]
+        except:
+            return "unknown"
+    
+    def get_os_info(self, host):
+        """Extract OS information from scan results"""
+        try:
+            if 'osmatch' in self.nm[host]:
+                os_matches = self.nm[host]['osmatch']
+                if os_matches:
+                    return {
+                        "name": os_matches[0]['name'],
+                        "accuracy": os_matches[0]['accuracy']
+                    }
+        except:
+            pass
+        return {"name": "unknown", "accuracy": "0"}
+    
+    def vulnerability_scan(self, host):
+        """Perform vulnerability scanning using Nmap scripts"""
+        print(f"[+] Running vulnerability scans on {host}")
+        vulnerabilities = []
+        
+        try:
+            # Run vulnerability detection scripts
+            vuln_scan = self.nm.scan(host, arguments='--script vuln')
+            
+            if host in vuln_scan['scan']:
+                host_data = vuln_scan['scan'][host]
+                if 'tcp' in host_data:
+                    for port in host_data['tcp']:
+                        port_data = host_data['tcp'][port]
+                        if 'script' in port_data:
+                            for script_name, script_output in port_data['script'].items():
+                                if 'vuln' in script_name.lower() or 'cve' in script_output.lower():
+                                    vulnerabilities.append({
+                                        "port": port,
+                                        "script": script_name,
+                                        "output": script_output,
+                                        "severity": self.assess_severity(script_output)
+                                    })
+                                    
+        except Exception as e:
+            print(f"[-] Error during vulnerability scan of {host}: {e}")
+            
+        return vulnerabilities
+    
+    def assess_severity(self, script_output):
+        """Assess vulnerability severity based on script output"""
+        output_lower = script_output.lower()
+        
+        if any(keyword in output_lower for keyword in ['critical', 'remote code execution', 'rce']):
+            return "CRITICAL"
+        elif any(keyword in output_lower for keyword in ['high', 'privilege escalation', 'authentication bypass']):
+            return "HIGH"
+        elif any(keyword in output_lower for keyword in ['medium', 'information disclosure', 'denial of service']):
+            return "MEDIUM"
+        else:
+            return "LOW"
+    
+    def scan_network(self):
+        """Main scanning function"""
+        print("[+] Starting comprehensive network vulnerability scan")
+        
+        # Discover active hosts
+        active_hosts = self.discover_hosts()
+        
+        if not active_hosts:
+            print("[-] No active hosts found")
+            return
+        
+        # Scan each active host
+        for host in active_hosts:
+            print(f"\n[+] Scanning host: {host}")
+            
+            # Port scan
+            host_info = self.port_scan(host)
+            if host_info:
+                # Vulnerability scan
+                vulnerabilities = self.vulnerability_scan(host)
+                host_info["vulnerabilities"] = vulnerabilities
+                
+                self.results["hosts"].append(host_info)
+                
+                # Print summary
+                print(f"[+] Host {host} scan complete:")
+                print(f"    - Open ports: {len(host_info['ports'])}")
+                print(f"    - Vulnerabilities found: {len(vulnerabilities)}")
+        
+        # Save results
+        self.save_results()
+        self.print_summary()
+    
+    def save_results(self):
+        """Save scan results to JSON file"""
+        try:
+            with open(self.output_file, 'w') as f:
+                json.dump(self.results, f, indent=2)
+            print(f"[+] Results saved to {self.output_file}")
+        except Exception as e:
+            print(f"[-] Error saving results: {e}")
+    
+    def print_summary(self):
+        """Print scan summary"""
+        print("\n" + "="*50)
+        print("SCAN SUMMARY")
+        print("="*50)
+        
+        total_hosts = len(self.results["hosts"])
+        total_ports = sum(len(host["ports"]) for host in self.results["hosts"])
+        total_vulns = sum(len(host["vulnerabilities"]) for host in self.results["hosts"])
+        
+        print(f"Hosts scanned: {total_hosts}")
+        print(f"Open ports found: {total_ports}")
+        print(f"Vulnerabilities identified: {total_vulns}")
+        
+        # Vulnerability breakdown by severity
+        severity_count = {"CRITICAL": 0, "HIGH": 0, "MEDIUM": 0, "LOW": 0}
+        for host in self.results["hosts"]:
+            for vuln in host["vulnerabilities"]:
+                severity_count[vuln["severity"]] += 1
+        
+        print("\nVulnerability Severity Breakdown:")
+        for severity, count in severity_count.items():
+            print(f"  {severity}: {count}")
+    
+    def send_to_elasticsearch(self, es_host="localhost", es_port=9200):
+        """Send results to Elasticsearch for Kibana analysis"""
+        try:
+            es = Elasticsearch([{'host': es_host, 'port': es_port}])
+            
+            # Create index if it doesn't exist
+            index_name = f"vulnerability-scan-{datetime.datetime.now().strftime('%Y-%m-%d')}"
+            
+            for host in self.results["hosts"]:
+                # Index host information
+                doc = {
+                    "timestamp": self.results["scan_info"]["timestamp"],
+                    "host_ip": host["ip"],
+                    "hostname": host["hostname"],
+                    "os_info": host["os_info"],
+                    "total_ports": len(host["ports"]),
+                    "total_vulnerabilities": len(host["vulnerabilities"]),
+                    "ports": host["ports"],
+                    "vulnerabilities": host["vulnerabilities"]
+                }
+                
+                es.index(index=index_name, body=doc)
+            
+            print(f"[+] Results sent to Elasticsearch index: {index_name}")
+            
+        except Exception as e:
+            print(f"[-] Error sending to Elasticsearch: {e}")
+
+def main():
+    parser = argparse.ArgumentParser(description="Automated Vulnerability Scanner")
+    parser.add_argument("target", help="Target IP range (e.g., 192.168.1.0/24)")
+    parser.add_argument("-o", "--output", default="scan_results.json", help="Output file")
+    parser.add_argument("--elasticsearch", action="store_true", help="Send results to Elasticsearch")
+    
+    args = parser.parse_args()
+    
+    # Validate target format
+    if not re.match(r'^(\d{1,3}\.){3}\d{1,3}/\d{1,2}$', args.target):
+        print("[-] Invalid target format. Use CIDR notation (e.g., 192.168.1.0/24)")
+        sys.exit(1)
+    
+    # Create scanner instance
+    scanner = VulnerabilityScanner(args.target, args.output)
+    
+    # Run scan
+    scanner.scan_network()
+    
+    # Send to Elasticsearch if requested
+    if args.elasticsearch:
+        scanner.send_to_elasticsearch()
+
+if __name__ == "__main__":
+    main()
+Step 3: Save the file and make it executable:
+
+chmod +x vulnerability_scanner.py
+Subtask 2.3: Test the Vulnerability Scanner
+Step 1: Run the scanner on your network range:
+
+python3 vulnerability_scanner.py 192.168.1.0/24 -o network_scan_results.json
+Step 2: View the results:
+
+cat network_scan_results.json | python3 -m json.tool | head -50
+Step 3: Create a simple results parser script:
+
+nano parse_results.py
+Add the following code:
+
+#!/usr/bin/env python3
+
+import json
+import sys
+
+def parse_scan_results(filename):
+    try:
+        with open(filename, 'r') as f:
+            data = json.load(f)
+        
+        print("VULNERABILITY SCAN REPORT")
+        print("=" * 50)
+        print(f"Scan Date: {data['scan_info']['timestamp']}")
+        print(f"Target Range: {data['scan_info']['target_range']}")
+        print(f"Total Hosts Scanned: {len(data['hosts'])}")
+        print()
+        
+        for host in data['hosts']:
+            print(f"Host: {host['ip']} ({host['hostname']})")
+            print(f"  OS: {host['os_info']['name']}")
+            print(f"  Open Ports: {len(host['ports'])}")
+            print(f"  Vulnerabilities: {len(host['vulnerabilities'])}")
+            
+            if host['vulnerabilities']:
+                print("  Critical Issues:")
+                for vuln in host['vulnerabilities']:
+                    if vuln['severity'] in ['CRITICAL', 'HIGH']:
+                        print(f"    - Port {vuln['port']}: {vuln['script']}")
+            print()
+            
+    except FileNotFoundError:
+        print(f"Error: File {filename} not found")
+    except json.JSONDecodeError:
+        print(f"Error: Invalid JSON in {filename}")
+
+if __name__ == "__main__":
+    if len(sys.argv) != 2:
+        print("Usage: python3 parse_results.py <results_file.json>")
+        sys.exit(1)
+    
+    parse_scan_results(sys.argv[1])
+Step 4: Make the parser executable and run it:
+
+chmod +x parse_results.py
+python3 parse_results.py network_scan_results.json
+Task 3: Analyze Results with Kibana
+Subtask 3.1: Start Elasticsearch and Kibana Services
+Step 1: Start Elasticsearch service:
+
+sudo systemctl start elasticsearch
+sudo systemctl enable elasticsearch
+Step 2: Verify Elasticsearch is running:
+
+curl -X GET "localhost:9200/"
+Step 3: Start Kibana service:
+
+sudo systemctl start kibana
+sudo systemctl enable kibana
+Step 4: Wait for Kibana to start (this may take a few minutes):
+
+sudo systemctl status kibana
+Subtask 3.2: Configure Kibana for Vulnerability Data
+Step 1: Access Kibana web interface. Open a web browser and navigate to:
+
+http://localhost:5601
+Step 2: Send scan results to Elasticsearch using our Python script:
+
+python3 vulnerability_scanner.py 192.168.1.0/24 --elasticsearch
+Step 3: In Kibana, go to Management > Stack Management > Index Patterns.
+
+Step 4: Click Create index pattern and enter:
+
+vulnerability-scan-*
+Step 5: Select timestamp as the time field and click Create index pattern.
+
+Subtask 3.3: Create Vulnerability Dashboards
+Step 1: Navigate to Analytics > Discover in Kibana.
+
+Step 2: Select your vulnerability index pattern and explore the data.
+
+Step 3: Create visualizations by going to Analytics > Visualize Library.
+
+Step 4: Create a Pie Chart for vulnerability severity distribution:
+
+Click Create visualization
+Select Pie
+Choose your index pattern
+In Buckets, add Split slices
+Aggregation: Terms
+Field: vulnerabilities.severity.keyword
+Step 5: Create a Bar Chart for ports by host:
+
+Create new visualization
+Select Vertical Bar
+Y-axis: Count
+X-axis: Terms aggregation on host_ip.keyword
+Step 6: Create a Data Table for detailed vulnerability information:
+
+Create new visualization
+Select Data Table
+Add metrics and buckets as needed
+Subtask 3.4: Build a Comprehensive Dashboard
+Step 1: Go to Analytics > Dashboard.
+
+Step 2: Click Create dashboard.
+
+Step 3: Add the visualizations you created by clicking Add and selecting your saved visualizations.
+
+Step 4: Arrange the visualizations on the dashboard.
+
+Step 5: Save the dashboard with a descriptive name like "Network Vulnerability Assessment".
+
+Subtask 3.5: Create Advanced Queries and Filters
+Step 1: In the Discover tab, create advanced queries using KQL (Kibana Query Language):
+
+vulnerabilities.severity: "CRITICAL" OR vulnerabilities.severity: "HIGH"
+Step 2: Create a query to find hosts with specific open ports:
+
+ports.port: 22 OR ports.port: 80 OR ports.port: 443
+Step 3: Search for specific services:
+
+ports.service: "ssh" OR ports.service: "http"
+Step 4: Save useful queries for future use.
+
+Troubleshooting Tips
+Common Issues and Solutions
+Issue 1: Nmap permission denied errors
+
+Solution: Run commands with sudo when scanning requires root privileges
+Issue 2: Python libraries not found
+
+Solution: Ensure you're using the correct Python version and pip:
+python3 --version
+pip3 --version
+Issue 3: Elasticsearch connection refused
+
+Solution: Check if Elasticsearch is running:
+sudo systemctl status elasticsearch
+sudo journalctl -u elasticsearch
+Issue 4: Kibana not accessible
+
+Solution: Verify Kibana configuration:
+sudo nano /etc/kibana/kibana.yml
+Ensure server.host is set to "0.0.0.0" or "localhost"
+
+Issue 5: No vulnerabilities found
+
+Solution: Update Nmap script database and try different targets:
+sudo nmap --script-updatedb
+Performance Optimization
+For Large Networks:
+
+Use parallel scanning: nmap -T4 or nmap -T5
+Limit port ranges: --top-ports 100
+Use host discovery first: nmap -sn before port scanning
+For Better Results:
+
+Run scans during off-peak hours
+Use different scan techniques for different services
+Combine multiple scanning tools for comprehensive coverage
+Conclusion
+In this comprehensive lab, you have successfully:
+
+Mastered Internal Network Scanning: You learned to use Nmap effectively for network discovery, port scanning, and vulnerability detection. These skills are essential for identifying potential security weaknesses in internal networks before attackers do.
+
+Automated Vulnerability Assessment: You created a sophisticated Python script that automates the vulnerability scanning process, making it more efficient and repeatable. This automation is crucial in enterprise environments where regular security assessments are necessary.
+
+Data Analysis and Visualization: You configured Kibana to analyze and visualize vulnerability data, transforming raw scan results into actionable intelligence. This skill helps security professionals communicate findings effectively to stakeholders and prioritize remediation efforts.
+
+Why This Matters:
+
+Internal network scanning is a critical component of a comprehensive cybersecurity strategy. Organizations face threats not only from external attackers but also from insider threats and lateral movement after initial compromise. Regular internal vulnerability assessments help:
+
+Identify Security Gaps: Discover unpatched systems, misconfigured services, and unnecessary open ports
+Prevent Lateral Movement: Limit an attacker's ability to move through the network after initial compromise
+Ensure Compliance: Meet regulatory requirements for regular security assessments
+Prioritize Resources: Focus security efforts on the most critical vulnerabilities
+The skills you've developed in this lab directly apply to real-world cybersecurity roles, including:
+
+Security Analyst: Regular vulnerability assessments and threat hunting
+Penetration Tester: Internal network reconnaissance and vulnerability exploitation
+Cyber Defense Architect: Designing comprehensive security monitoring and assessment programs
+Incident Response: Understanding network topology and potential attack vectors during security incidents
+By combining technical scanning skills with data analysis capabilities, you're now equipped to contribute meaningfully to an organization's cybersecurity posture and help protect critical digital assets from evolving threats.
