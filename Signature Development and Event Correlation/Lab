@@ -1,0 +1,374 @@
+Signature Development and Event Correlation
+Objectives
+By the end of this lab, students will be able to:
+
+Create custom IDS signatures for Snort and Suricata
+Configure Logstash pipelines for security event correlation
+Implement pattern matching and anomaly detection rules
+Build Kibana dashboards for security event visualization
+Correlate multiple security events to identify attack patterns
+Prerequisites
+Basic understanding of network protocols (TCP/IP, HTTP, DNS)
+Familiarity with Linux command line operations
+Knowledge of regular expressions
+Understanding of JSON data structures
+Basic security concepts and IDS principles
+Lab Environment
+Al Nafi Cloud Machine: Click Start Lab to access your pre-configured Ubuntu 22.04 LTS environment with 8GB RAM and all required tools pre-installed.
+
+Pre-installed Tools:
+
+Snort 3.x
+Suricata 6.x
+Elasticsearch 8.x
+Logstash 8.x
+Kibana 8.x
+Task 1: Create Custom Snort Signatures
+Step 1: Configure Snort Environment
+# Create necessary directories
+sudo mkdir -p /etc/snort/rules
+sudo mkdir -p /var/log/snort
+
+# Verify Snort installation
+snort --version
+Step 2: Create Custom Snort Rules
+Create /etc/snort/rules/local.rules:
+
+# TODO: Create rule to detect SQL injection attempts
+# Hint: Look for "union select" in HTTP traffic on port 80
+# Format: alert tcp any any -> $HTTP_SERVERS 80 (msg:"..."; content:"..."; sid:1000001;)
+
+# TODO: Create rule to detect XSS attacks
+# Hint: Detect "<script>" tags in HTTP requests
+# sid:1000002
+
+# TODO: Create rule to detect SSH brute force
+# Hint: Use threshold to count multiple SSH connection attempts
+# sid:1000003
+
+# TODO: Create rule to detect port scanning
+# Hint: Look for SYN flags with threshold tracking
+# sid:1000004
+
+# TODO: Create rule to detect suspicious file downloads
+# Hint: Monitor for .exe file requests
+# sid:1000005
+Step 3: Configure Snort
+Edit /etc/snort/snort.conf:
+
+# TODO: Set HOME_NET variable to your network range
+# var HOME_NET = [YOUR_NETWORK]/24
+
+# TODO: Set EXTERNAL_NET variable
+# var EXTERNAL_NET = !$HOME_NET
+
+# TODO: Configure rule path
+# var RULE_PATH = /etc/snort/rules
+
+# TODO: Include local rules file
+# include $RULE_PATH/local.rules
+
+# TODO: Configure alert output
+# output alert_fast: /var/log/snort/alert
+Step 4: Test Snort Rules
+# TODO: Start Snort in test mode
+# Command: sudo snort -T -c /etc/snort/snort.conf
+
+# TODO: Run Snort in IDS mode on interface
+# Command: sudo snort -A console -q -c /etc/snort/snort.conf -i [INTERFACE]
+
+# TODO: Generate test traffic to trigger rules
+# Use curl or wget to simulate attacks
+Task 2: Create Custom Suricata Signatures
+Step 1: Configure Suricata
+Edit /etc/suricata/suricata.yaml:
+
+# TODO: Configure address groups
+vars:
+  address-groups:
+    HOME_NET: "[192.168.1.0/24]"
+    EXTERNAL_NET: "!$HOME_NET"
+
+# TODO: Set default rule path
+default-rule-path: /etc/suricata/rules
+
+# TODO: Configure rule files
+rule-files:
+  - custom.rules
+
+# TODO: Enable EVE JSON logging
+outputs:
+  - eve-log:
+      enabled: yes
+      filename: eve.json
+Step 2: Create Suricata Rules
+Create /etc/suricata/rules/custom.rules:
+
+# TODO: Create rule for detecting lateral movement
+# Hint: Monitor SMB traffic (port 445) for suspicious patterns
+# sid:2000001
+
+# TODO: Create rule for detecting data exfiltration
+# Hint: Monitor large outbound data transfers
+# sid:2000002
+
+# TODO: Create rule for detecting C2 communication
+# Hint: Look for periodic beaconing patterns
+# sid:2000003
+
+# TODO: Create rule for detecting privilege escalation
+# Hint: Monitor for "sudo" or "whoami" commands
+# sid:2000004
+
+# TODO: Create rule for detecting ransomware indicators
+# Hint: Look for file encryption patterns
+# sid:2000005
+Step 3: Test Suricata
+# TODO: Test Suricata configuration
+# Command: sudo suricata -T -c /etc/suricata/suricata.yaml
+
+# TODO: Start Suricata in IDS mode
+# Command: sudo suricata -c /etc/suricata/suricata.yaml -i [INTERFACE]
+
+# TODO: Monitor EVE JSON output
+# Command: tail -f /var/log/suricata/eve.json
+Task 3: Configure Logstash for Event Correlation
+Step 1: Create Logstash Input Configuration
+Create /etc/logstash/conf.d/01-input.conf:
+
+input {
+  # TODO: Configure file input for Snort alerts
+  file {
+    path => "/var/log/snort/alert"
+    start_position => "beginning"
+    tags => ["snort"]
+  }
+  
+  # TODO: Configure file input for Suricata EVE JSON
+  file {
+    path => "/var/log/suricata/eve.json"
+    codec => json
+    tags => ["suricata"]
+  }
+  
+  # TODO: Configure file input for auth logs
+  file {
+    path => "/var/log/auth.log"
+    tags => ["auth"]
+  }
+}
+Step 2: Create Logstash Filter Configuration
+Create /etc/logstash/conf.d/02-filter.conf:
+
+filter {
+  # TODO: Parse Snort alerts using grok
+  if "snort" in [tags] {
+    grok {
+      match => { 
+        "message" => "PATTERN_HERE"
+      }
+    }
+    # TODO: Add event_type field
+    # TODO: Add correlation_key based on src_ip
+  }
+  
+  # TODO: Process Suricata events
+  if "suricata" in [tags] {
+    # TODO: Extract relevant fields
+    # TODO: Add severity classification
+    # TODO: Create correlation_key
+  }
+  
+  # TODO: Parse authentication logs
+  if "auth" in [tags] {
+    grok {
+      match => { 
+        "message" => "PATTERN_HERE"
+      }
+    }
+    
+    # TODO: Detect failed login attempts
+    # TODO: Detect successful logins
+    # TODO: Add correlation_key
+  }
+  
+  # TODO: Implement correlation logic
+  if [correlation_key] {
+    aggregate {
+      task_id => "%{correlation_key}"
+      code => "
+        # TODO: Collect events by correlation_key
+        # TODO: Detect multi-stage attack patterns
+        # TODO: Calculate correlation score
+      "
+      timeout => 300
+    }
+  }
+}
+Step 3: Create Logstash Output Configuration
+Create /etc/logstash/conf.d/03-output.conf:
+
+output {
+  # TODO: Configure Elasticsearch output
+  elasticsearch {
+    hosts => ["localhost:9200"]
+    index => "security-events-%{+YYYY.MM.dd}"
+  }
+  
+  # TODO: Add stdout for debugging
+  stdout { 
+    codec => rubydebug 
+  }
+}
+Step 4: Test Logstash Pipeline
+# TODO: Test Logstash configuration
+# Command: sudo /usr/share/logstash/bin/logstash -t -f /etc/logstash/conf.d/
+
+# TODO: Start Logstash service
+# Command: sudo systemctl start logstash
+
+# TODO: Verify events in Elasticsearch
+# Command: curl -X GET "localhost:9200/security-events-*/_search?pretty"
+Task 4: Build Kibana Dashboards
+Step 1: Create Index Patterns
+# TODO: Create index pattern for security events
+curl -X POST "localhost:5601/api/saved_objects/index-pattern/security-events" \
+  -H "Content-Type: application/json" \
+  -H "kbn-xsrf: true" \
+  -d '{
+    "attributes": {
+      "title": "security-events-*",
+      "timeFieldName": "@timestamp"
+    }
+  }'
+Step 2: Create Visualizations
+Access Kibana at http://localhost:5601 and create:
+
+Visualization 1: Attack Pattern Distribution
+
+Type: Pie Chart
+Metrics: Count
+Buckets: Terms aggregation on attack_pattern.keyword
+Visualization 2: Events Timeline
+
+Type: Line Chart
+Metrics: Count
+Buckets: Date Histogram on @timestamp
+Split Series: Terms on event_type.keyword
+Visualization 3: Top Source IPs
+
+Type: Data Table
+Metrics: Count, Unique Count of event_type
+Buckets: Terms on src_ip.keyword
+Visualization 4: Severity Heatmap
+
+Type: Heat Map
+Metrics: Count
+Buckets: Date Histogram and Terms on severity.keyword
+Step 3: Create Security Dashboard
+# TODO: Create new dashboard in Kibana
+# TODO: Add all visualizations created above
+# TODO: Arrange visualizations in logical layout
+# TODO: Set time range to "Last 24 hours"
+# TODO: Save dashboard as "Security Events Overview"
+Step 4: Create Correlation Dashboard
+Visualization 5: Correlation Score Distribution
+
+Type: Vertical Bar Chart
+Metrics: Average of correlation_score
+Buckets: Terms on correlation_key.keyword
+Visualization 6: Multi-Stage Attacks
+
+Type: Data Table
+Filter: attack_pattern exists
+Metrics: Count, Max correlation_score
+Buckets: Terms on attack_pattern.keyword
+# TODO: Create "Attack Correlation Analysis" dashboard
+# TODO: Add correlation-specific visualizations
+# TODO: Add filters for severity and time range
+# TODO: Save dashboard
+Task 5: Implement Advanced Correlation Rules
+Step 1: Create Time-Based Correlation
+Add to Logstash filter configuration:
+
+# TODO: Implement time window correlation
+ruby {
+  code => "
+    # TODO: Calculate time difference between events
+    # TODO: Classify events into correlation windows
+    # TODO: Set correlation_window field
+  "
+}
+Step 2: Create Frequency-Based Detection
+# TODO: Implement frequency analysis
+ruby {
+  code => "
+    # TODO: Count events per source IP
+    # TODO: Calculate frequency score
+    # TODO: Set frequency_risk level
+  "
+}
+Step 3: Create Geographic Correlation
+# TODO: Add GeoIP enrichment
+if [src_ip] {
+  geoip {
+    source => "src_ip"
+    target => "geoip"
+  }
+  
+  # TODO: Flag high-risk geographic locations
+  # TODO: Add geo_risk field
+}
+Step 4: Test Advanced Correlation
+# TODO: Generate test events from multiple sources
+# TODO: Verify correlation in Elasticsearch
+# TODO: Check correlation scores in Kibana
+# TODO: Validate attack pattern detection
+Expected Outcomes
+After completing this lab, you should have:
+
+Custom IDS signatures detecting various attack types
+Functional Logstash pipeline correlating security events
+Kibana dashboards visualizing security data
+Working correlation rules identifying multi-stage attacks
+Understanding of signature-based detection and event correlation
+Troubleshooting Tips
+Issue: Snort/Suricata not detecting events
+
+Verify rules syntax with -T flag
+Check network interface is correct
+Ensure traffic is flowing through monitored interface
+Review alert logs for errors
+Issue: Logstash not processing events
+
+Check file permissions on log files
+Verify grok patterns match log format
+Test configuration with -t flag
+Review Logstash logs: /var/log/logstash/logstash-plain.log
+Issue: Kibana visualizations empty
+
+Verify index pattern matches Elasticsearch indices
+Check time range in Kibana
+Confirm data exists in Elasticsearch
+Refresh field list in index pattern settings
+Issue: Correlation not working
+
+Verify correlation_key field is populated
+Check aggregate filter timeout settings
+Ensure events have matching correlation keys
+Review Logstash debug output
+Conclusion
+This lab provided hands-on experience with signature development and event correlation using industry-standard tools. You created custom IDS signatures, built correlation pipelines, and visualized security events. These skills are essential for security operations centers (SOCs) and threat detection teams.
+
+Key Takeaways:
+
+Signature-based detection requires understanding of attack patterns
+Event correlation reveals complex, multi-stage attacks
+Visualization helps identify trends and anomalies
+Automation through pipelines enables real-time threat detection
+Next Steps:
+
+Experiment with more complex correlation rules
+Integrate additional data sources (firewall logs, application logs)
+Create alerting rules for high-priority events
+Practice incident response based on correlated events
