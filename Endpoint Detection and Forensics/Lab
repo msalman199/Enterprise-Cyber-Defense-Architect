@@ -1,0 +1,530 @@
+ Endpoint Detection and Forensics
+Objectives
+By the end of this lab, students will be able to:
+
+Install and configure Velociraptor for endpoint monitoring
+Develop Python scripts for automated endpoint data collection
+Perform memory forensics analysis using system tools
+Correlate endpoint detection data with forensic artifacts
+Generate incident response reports from collected data
+Prerequisites
+Before starting this lab, students should have:
+
+Basic Linux command line proficiency
+Fundamental Python programming skills
+Understanding of system processes and network connections
+Basic knowledge of digital forensics concepts
+Lab Environment
+Al Nafi provides ready-to-use Linux-based cloud machines for this lab. Simply click Start Lab to access your pre-configured environment with all necessary tools installed.
+
+Task 1: Setting Up Velociraptor for Endpoint Monitoring
+Step 1.1: Install Velociraptor
+Download and configure Velociraptor on your system:
+
+# Create working directory
+mkdir -p ~/endpoint-forensics-lab
+cd ~/endpoint-forensics-lab
+
+# Download Velociraptor binary
+wget https://github.com/Velocidex/velociraptor/releases/download/v0.7.0/velociraptor-v0.7.0-linux-amd64
+
+# Make executable
+chmod +x velociraptor-v0.7.0-linux-amd64
+sudo ln -s $(pwd)/velociraptor-v0.7.0-linux-amd64 /usr/local/bin/velociraptor
+Step 1.2: Generate Configuration Files
+Create server and client configurations:
+
+# Generate server configuration
+velociraptor config generate > server.config.yaml
+
+# Generate client configuration
+velociraptor --config server.config.yaml config client > client.config.yaml
+
+# Create necessary directories
+mkdir -p logs artifacts
+Step 1.3: Start Velociraptor Services
+Launch the server and client:
+
+# Start server in background
+velociraptor --config server.config.yaml frontend -v &
+
+# Wait for server initialization
+sleep 10
+
+# Start client
+velociraptor --config client.config.yaml client -v &
+
+# Verify both are running
+ps aux | grep velociraptor
+Task 2: Developing Automated Endpoint Data Collection Script
+Step 2.1: Create Data Collection Script Template
+Create a Python script to automate endpoint data collection. Students will complete the implementation:
+
+#!/usr/bin/env python3
+"""
+Endpoint Data Collection Script
+Students: Complete the TODO sections to implement full functionality
+"""
+
+import os
+import json
+import subprocess
+import datetime
+import psutil
+from pathlib import Path
+
+class EndpointCollector:
+    def __init__(self, output_dir="endpoint_data"):
+        """Initialize the collector with output directory"""
+        self.output_dir = Path(output_dir)
+        self.output_dir.mkdir(exist_ok=True)
+        self.timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+        
+    def collect_system_info(self):
+        """
+        Collect basic system information including:
+        - Hostname, kernel version, architecture
+        - System uptime
+        - Currently logged users
+        - Active network connections
+        
+        Returns:
+            dict: System information dictionary
+        """
+        # TODO: Implement system information collection
+        # TODO: Use os.uname() for system details
+        # TODO: Read /proc/uptime for uptime information
+        # TODO: Use psutil.users() for logged users
+        # TODO: Use psutil.net_connections() for network info
+        # TODO: Save results to JSON file
+        pass
+    
+    def collect_processes(self):
+        """
+        Collect running process information including:
+        - PID, name, username
+        - Command line arguments
+        - Process creation time
+        
+        Returns:
+            list: List of process dictionaries
+        """
+        # TODO: Iterate through psutil.process_iter()
+        # TODO: Collect process attributes
+        # TODO: Handle exceptions for inaccessible processes
+        # TODO: Save to JSON file
+        pass
+    
+    def collect_file_hashes(self, directories=["/bin", "/usr/bin"]):
+        """
+        Calculate SHA256 hashes for files in critical directories
+        
+        Args:
+            directories: List of directories to scan
+            
+        Returns:
+            dict: File paths mapped to hash information
+        """
+        # TODO: Walk through specified directories
+        # TODO: Calculate SHA256 hash for each file
+        # TODO: Collect file metadata (size, modification time)
+        # TODO: Handle permission errors gracefully
+        # TODO: Save results to JSON file
+        pass
+    
+    def collect_logs(self):
+        """
+        Collect recent entries from system logs:
+        - /var/log/auth.log
+        - /var/log/syslog
+        
+        Returns:
+            dict: Log file names mapped to recent entries
+        """
+        # TODO: Read last 100 lines from each log file
+        # TODO: Use subprocess to run 'tail' command
+        # TODO: Handle missing log files
+        # TODO: Save to JSON file
+        pass
+    
+    def run_collection(self):
+        """Execute complete data collection workflow"""
+        print(f"[+] Starting endpoint data collection at {self.timestamp}")
+        
+        # TODO: Call all collection methods
+        # TODO: Generate summary report with statistics
+        # TODO: Save summary to JSON file
+        # TODO: Print completion message
+        pass
+
+if __name__ == "__main__":
+    # TODO: Instantiate EndpointCollector
+    # TODO: Run collection process
+    pass
+Step 2.2: Install Dependencies and Run Collection
+# Install required Python packages
+pip3 install psutil
+
+# Save your completed script as endpoint_collector.py
+# Make it executable
+chmod +x endpoint_collector.py
+
+# Run the collection script
+python3 endpoint_collector.py
+
+# Verify collected data
+ls -la endpoint_data/
+Step 2.3: Analyze Collected Data
+Review the output files:
+
+# View collection summary
+cat endpoint_data/collection_summary_*.json | python3 -m json.tool
+
+# Check system information
+head -30 endpoint_data/system_info_*.json
+
+# Review process list
+head -50 endpoint_data/processes_*.json
+Task 3: Memory Forensics Analysis
+Step 3.1: Create Memory Analysis Script Template
+Develop a script to analyze system memory and processes:
+
+#!/usr/bin/env python3
+"""
+Memory Forensics Analysis Script
+Students: Complete the implementation for full functionality
+"""
+
+import os
+import json
+import subprocess
+import datetime
+from pathlib import Path
+
+class MemoryAnalyzer:
+    def __init__(self, output_dir="memory_analysis"):
+        """Initialize memory analyzer"""
+        self.output_dir = Path(output_dir)
+        self.output_dir.mkdir(exist_ok=True)
+        self.timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+    
+    def analyze_processes(self):
+        """
+        Analyze running processes for suspicious activity:
+        - Generate process tree
+        - Identify suspicious command patterns
+        - Flag unusual process behaviors
+        
+        Returns:
+            str: Process analysis output
+        """
+        # TODO: Run 'ps aux --forest' to get process tree
+        # TODO: Save process tree to file
+        # TODO: Search for suspicious patterns (nc, netcat, /tmp/, wget, curl)
+        # TODO: Save suspicious processes to separate file
+        pass
+    
+    def analyze_network_connections(self):
+        """
+        Analyze active network connections:
+        - List all listening ports
+        - Identify established connections
+        - Flag suspicious ports
+        
+        Returns:
+            str: Network connection analysis
+        """
+        # TODO: Run 'netstat -tulpn' or 'ss -tulpn'
+        # TODO: Save all connections to file
+        # TODO: Check for suspicious ports (4444, 1234, 31337, etc.)
+        # TODO: Save suspicious connections separately
+        pass
+    
+    def analyze_file_system(self):
+        """
+        Analyze file system for forensic artifacts:
+        - Recently modified files in /tmp
+        - Hidden files in user directories
+        - Suspicious bash history entries
+        
+        Returns:
+            dict: File system artifacts
+        """
+        # TODO: Find recently modified files in /tmp and /var/tmp
+        # TODO: Search for hidden files in /home directories
+        # TODO: Parse bash history for suspicious commands
+        # TODO: Save artifacts to JSON file
+        pass
+    
+    def generate_timeline(self):
+        """
+        Generate timeline of system events from logs
+        
+        Returns:
+            list: Timeline events
+        """
+        # TODO: Extract recent entries from auth.log and syslog
+        # TODO: Parse timestamps and events
+        # TODO: Sort events chronologically
+        # TODO: Save timeline to JSON file
+        pass
+    
+    def run_analysis(self):
+        """Execute complete memory forensics analysis"""
+        print(f"[+] Starting memory forensics analysis at {self.timestamp}")
+        
+        # TODO: Run all analysis methods
+        # TODO: Generate summary with key findings
+        # TODO: Display suspicious indicators found
+        # TODO: Save complete analysis report
+        pass
+
+if __name__ == "__main__":
+    # TODO: Instantiate MemoryAnalyzer
+    # TODO: Run analysis
+    pass
+Step 3.2: Execute Memory Analysis
+# Save your completed script as memory_analyzer.py
+chmod +x memory_analyzer.py
+
+# Run the analysis
+python3 memory_analyzer.py
+
+# Review results
+ls -la memory_analysis/
+cat memory_analysis/analysis_summary_*.json | python3 -m json.tool
+Task 4: Correlating Endpoint and Memory Data
+Step 4.1: Create Correlation Script Template
+Build a script to correlate findings from both analyses:
+
+#!/usr/bin/env python3
+"""
+Forensics Correlation Script
+Students: Implement correlation logic to identify security incidents
+"""
+
+import json
+import glob
+from pathlib import Path
+from datetime import datetime
+
+class ForensicsCorrelator:
+    def __init__(self):
+        """Initialize correlator with data directories"""
+        self.endpoint_dir = Path("endpoint_data")
+        self.memory_dir = Path("memory_analysis")
+        self.output_dir = Path("correlation_results")
+        self.output_dir.mkdir(exist_ok=True)
+        self.timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    
+    def load_endpoint_data(self):
+        """
+        Load endpoint detection data from JSON files
+        
+        Returns:
+            dict: Endpoint data including system info, processes, hashes
+        """
+        # TODO: Load system_info JSON file
+        # TODO: Load processes JSON file
+        # TODO: Load file_hashes JSON file
+        # TODO: Return combined dictionary
+        pass
+    
+    def load_memory_data(self):
+        """
+        Load memory analysis data from JSON files
+        
+        Returns:
+            dict: Memory analysis data including artifacts, timeline
+        """
+        # TODO: Load filesystem_artifacts JSON file
+        # TODO: Load timeline JSON file
+        # TODO: Load analysis_summary JSON file
+        # TODO: Return combined dictionary
+        pass
+    
+    def correlate_processes(self, endpoint_data, memory_data):
+        """
+        Correlate process information from both sources
+        
+        Args:
+            endpoint_data: Data from endpoint collection
+            memory_data: Data from memory analysis
+            
+        Returns:
+            list: Process correlations with risk indicators
+        """
+        # TODO: Compare process lists from both sources
+        # TODO: Identify processes with suspicious patterns
+        # TODO: Flag processes running from unusual locations
+        # TODO: Return list of suspicious process correlations
+        pass
+    
+    def correlate_network_activity(self, endpoint_data, memory_data):
+        """
+        Correlate network connections and identify risks
+        
+        Returns:
+            list: Network correlations with risk indicators
+        """
+        # TODO: Analyze network connections from endpoint data
+        # TODO: Check for suspicious ports
+        # TODO: Identify external connections
+        # TODO: Return list of risky connections
+        pass
+    
+    def correlate_file_activity(self, endpoint_data, memory_data):
+        """
+        Correlate file system activity between datasets
+        
+        Returns:
+            list: File correlations
+        """
+        # TODO: Compare file hashes with suspicious file locations
+        # TODO: Check for files in temporary directories
+        # TODO: Identify recently modified system files
+        # TODO: Return list of suspicious file activities
+        pass
+    
+    def generate_risk_assessment(self, all_correlations):
+        """
+        Generate overall risk assessment based on correlations
+        
+        Args:
+            all_correlations: Combined correlation results
+            
+        Returns:
+            dict: Risk assessment with score and recommendations
+        """
+        # TODO: Calculate risk score based on findings
+        # TODO: Determine risk level (HIGH/MEDIUM/LOW/MINIMAL)
+        # TODO: Generate security recommendations
+        # TODO: Return assessment dictionary
+        pass
+    
+    def generate_incident_report(self, assessment, correlations):
+        """
+        Generate comprehensive incident response report
+        
+        Args:
+            assessment: Risk assessment results
+            correlations: All correlation findings
+            
+        Returns:
+            dict: Complete incident report
+        """
+        # TODO: Compile executive summary
+        # TODO: List all findings by category
+        # TODO: Include timeline of events
+        # TODO: Provide remediation steps
+        # TODO: Save report to JSON and text formats
+        pass
+    
+    def run_correlation(self):
+        """Execute complete correlation analysis"""
+        print(f"[+] Starting forensics correlation at {self.timestamp}")
+        
+        # TODO: Load data from both analyses
+        # TODO: Run all correlation methods
+        # TODO: Generate risk assessment
+        # TODO: Create incident report
+        # TODO: Display summary of findings
+        pass
+
+if __name__ == "__main__":
+    # TODO: Instantiate ForensicsCorrelator
+    # TODO: Run correlation analysis
+    pass
+Step 4.2: Run Correlation Analysis
+# Save your completed script as forensics_correlator.py
+chmod +x forensics_correlator.py
+
+# Run correlation
+python3 forensics_correlator.py
+
+# Review correlation results
+ls -la correlation_results/
+cat correlation_results/incident_report_*.json | python3 -m json.tool
+Step 4.3: Generate Final Report
+Create a summary report of your findings:
+
+# Create report directory
+mkdir -p final_report
+
+# Compile all findings
+cat > final_report/executive_summary.txt << 'EOF'
+ENDPOINT DETECTION AND FORENSICS ANALYSIS REPORT
+================================================
+
+Analysis Date: [INSERT DATE]
+Analyst: [YOUR NAME]
+
+EXECUTIVE SUMMARY:
+[TODO: Summarize key findings]
+
+RISK ASSESSMENT:
+Risk Level: [HIGH/MEDIUM/LOW]
+Risk Score: [SCORE]
+
+KEY FINDINGS:
+1. [Finding 1]
+2. [Finding 2]
+3. [Finding 3]
+
+RECOMMENDATIONS:
+1. [Recommendation 1]
+2. [Recommendation 2]
+3. [Recommendation 3]
+
+DETAILED ANALYSIS:
+See attached JSON files for complete technical details.
+EOF
+
+# Edit the summary with your actual findings
+nano final_report/executive_summary.txt
+Expected Outcomes
+After completing this lab, students should have:
+
+Functional Velociraptor installation for endpoint monitoring
+Python scripts for automated data collection and analysis
+Memory forensics analysis results identifying system artifacts
+Correlation analysis linking endpoint and memory data
+Comprehensive incident response report with risk assessment
+Understanding of forensic investigation workflow
+Troubleshooting Tips
+Issue: Velociraptor fails to start
+
+Check if ports 8000 and 8001 are available: netstat -tulpn | grep 800
+Verify configuration file syntax: velociraptor --config server.config.yaml config show
+Check logs in the logs directory for error messages
+Issue: Permission denied when collecting data
+
+Run collection scripts with sudo for system-level access: sudo python3 endpoint_collector.py
+Ensure proper file permissions: chmod +x script.py
+Check SELinux/AppArmor policies if enabled
+Issue: Missing Python modules
+
+Install all dependencies: pip3 install psutil
+Use virtual environment to avoid conflicts: python3 -m venv venv && source venv/bin/activate
+Verify Python version is 3.6 or higher: python3 --version
+Issue: No data in correlation results
+
+Ensure endpoint collection completed successfully
+Verify memory analysis generated output files
+Check that JSON files are valid: python3 -m json.tool < file.json
+Conclusion
+This lab provided hands-on experience with endpoint detection and forensics using industry-standard tools and techniques. Students learned to:
+
+Deploy endpoint monitoring solutions using Velociraptor
+Automate forensic data collection with Python
+Analyze system memory and processes for security incidents
+Correlate multiple data sources to identify threats
+Generate professional incident response reports
+These skills are essential for security analysts, incident responders, and forensic investigators. Continue practicing by analyzing different types of security incidents and refining your detection and analysis techniques.
+
+Next Steps:
+
+Explore advanced Velociraptor artifacts and queries
+Study malware analysis techniques
+Practice with CTF challenges involving forensics
+Learn about SIEM integration for automated alerting
