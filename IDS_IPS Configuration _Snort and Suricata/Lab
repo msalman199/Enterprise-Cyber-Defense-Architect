@@ -1,0 +1,606 @@
+: IDS/IPS Configuration (Snort and Suricata)
+Lab Objectives
+By the end of this lab, students will be able to:
+
+Install and configure Snort and Suricata IDS/IPS systems
+Create custom detection rules using Python scripting
+Generate test traffic to validate IDS functionality
+Analyze security alerts using the Elastic Stack (Elasticsearch, Logstash, Kibana)
+Compare Snort and Suricata capabilities and performance
+Prerequisites
+Basic Linux command line proficiency
+Understanding of TCP/IP networking and common protocols
+Familiarity with network security concepts
+Basic Python programming skills
+Knowledge of regular expressions
+Lab Environment
+Cloud Environment: Al Nafi provides pre-configured Ubuntu 22.04 LTS cloud machines. Click Start Lab to access your environment.
+
+System Specifications:
+
+Ubuntu 22.04 LTS
+4GB RAM minimum
+20GB disk space
+Internet connectivity
+Task 1: Install and Configure Snort and Suricata
+Step 1.1: Install System Dependencies
+Update your system and install required packages:
+
+# Update system
+sudo apt update && sudo apt upgrade -y
+
+# Install dependencies
+sudo apt install -y build-essential libpcap-dev libpcre3-dev \
+libdumbnet-dev bison flex zlib1g-dev liblzma-dev openssl \
+libssl-dev pkg-config git wget curl python3 python3-pip \
+libjansson-dev libnetfilter-queue-dev libhyperscan-dev
+Step 1.2: Install Snort 3
+# Create working directory
+mkdir -p ~/ids-lab && cd ~/ids-lab
+
+# Install libdaq
+wget https://github.com/snort3/libdaq/archive/refs/tags/v3.0.11.tar.gz
+tar -xzf v3.0.11.tar.gz
+cd libdaq-3.0.11
+./bootstrap && ./configure && make -j$(nproc)
+sudo make install
+cd ..
+
+# Install Snort 3
+wget https://github.com/snort3/snort3/archive/refs/tags/3.1.64.0.tar.gz
+tar -xzf 3.1.64.0.tar.gz
+cd snort3-3.1.64.0
+./configure_cmake.sh --prefix=/usr/local
+cd build && make -j$(nproc)
+sudo make install
+sudo ldconfig
+
+# Verify installation
+/usr/local/bin/snort --version
+Step 1.3: Install Suricata
+# Add Suricata repository
+sudo add-apt-repository ppa:oisf/suricata-stable -y
+sudo apt update
+
+# Install Suricata
+sudo apt install -y suricata
+
+# Verify installation
+suricata --version
+Step 1.4: Create Directory Structure
+# Snort directories
+sudo mkdir -p /usr/local/etc/snort/{rules,so_rules,lists,preproc_rules}
+sudo mkdir -p /var/log/snort
+
+# Suricata directories
+sudo mkdir -p /var/log/suricata
+sudo mkdir -p /etc/suricata/rules
+
+# Set permissions
+sudo chown -R $USER:$USER /var/log/snort /var/log/suricata
+Step 1.5: Configure Snort
+Create basic Snort configuration:
+
+sudo tee /usr/local/etc/snort/snort.lua > /dev/null << 'EOF'
+-- Snort 3 Configuration
+HOME_NET = '192.168.1.0/24'
+EXTERNAL_NET = '!$HOME_NET'
+
+daq = {
+    inputs = { 'eth0' },
+    snaplen = 1518,
+}
+
+stream = { }
+http_inspect = { }
+
+alert_fast = {
+    file = '/var/log/snort/alert.txt',
+}
+
+ips = {
+    rules = [[
+        include /usr/local/etc/snort/rules/local.rules
+        include /usr/local/etc/snort/rules/custom.rules
+    ]]
+}
+EOF
+Task 2: Develop Custom Detection Rules with Python
+Step 2.1: Create Python Rule Generator Template
+Create a script to generate Snort rules dynamically. Students will complete the implementation:
+
+#!/usr/bin/env python3
+"""
+Snort Rule Generator
+Students: Complete the methods to generate custom detection rules
+"""
+
+import re
+from datetime import datetime
+
+class SnortRuleGenerator:
+    def __init__(self):
+        self.rule_counter = 1000000
+        self.rules = []
+    
+    def generate_web_attack_rules(self):
+        """
+        Generate rules for web attacks (SQL injection, XSS, directory traversal)
+        
+        TODO: Implement rule generation for:
+        - SQL injection patterns (union, select, insert)
+        - XSS attempts (<script>, javascript:, onerror=)
+        - Directory traversal (../, %2e%2e)
+        
+        Rule format:
+        alert tcp $EXTERNAL_NET any -> $HOME_NET [80,443] (msg:"Attack Name"; 
+        content:"pattern"; nocase; sid:XXXXX; rev:1;)
+        """
+        # TODO: Create SQL injection rule
+        # TODO: Create XSS detection rule
+        # TODO: Create directory traversal rule
+        pass
+    
+    def generate_network_scan_rules(self):
+        """
+        Generate rules for network scanning detection
+        
+        TODO: Implement rules for:
+        - Port scan detection (SYN flags, threshold tracking)
+        - ICMP ping sweeps
+        
+        Use threshold: type threshold, track by_src, count X, seconds Y
+        """
+        # TODO: Create port scan rule
+        # TODO: Create ICMP sweep rule
+        pass
+    
+    def generate_malware_rules(self):
+        """
+        Generate rules for malware detection
+        
+        TODO: Implement rules for:
+        - Suspicious PowerShell commands (encoded commands)
+        - Suspicious file downloads (.exe, .scr, .bat)
+        """
+        # TODO: Create PowerShell detection rule
+        # TODO: Create suspicious download rule
+        pass
+    
+    def _create_rule(self, msg, protocol, src_ip, src_port, direction, 
+                     dest_ip, dest_port, content, options=""):
+        """
+        Helper method to create a properly formatted Snort rule
+        
+        Args:
+            msg: Alert message
+            protocol: tcp/udp/icmp
+            src_ip, src_port: Source address and port
+            direction: -> or <>
+            dest_ip, dest_port: Destination address and port
+            content: Content to match
+            options: Additional rule options
+        
+        Returns:
+            Formatted Snort rule string
+        """
+        # TODO: Format and return complete rule
+        # TODO: Increment rule_counter
+        # TODO: Add rule to self.rules list
+        pass
+    
+    def save_rules(self, filename):
+        """
+        Save generated rules to file
+        
+        TODO: Write rules to file with header comments
+        TODO: Include timestamp and rule count
+        """
+        # TODO: Implement file writing
+        pass
+
+if __name__ == "__main__":
+    generator = SnortRuleGenerator()
+    
+    # TODO: Call generation methods
+    # TODO: Save rules to /usr/local/etc/snort/rules/custom.rules
+    pass
+Step 2.2: Create Basic Local Rules
+Create a starter rules file:
+
+sudo tee /usr/local/etc/snort/rules/local.rules > /dev/null << 'EOF'
+# Local Snort Rules
+
+# ICMP Detection
+alert icmp $EXTERNAL_NET any -> $HOME_NET any (msg:"ICMP Ping Detected"; itype:8; sid:10000001; rev:1;)
+
+# SSH Brute Force
+alert tcp $EXTERNAL_NET any -> $HOME_NET 22 (msg:"Possible SSH Brute Force"; flow:to_server,established; detection_filter:track by_src, count 5, seconds 60; sid:10000002; rev:1;)
+
+# Suspicious DNS Query
+alert udp $HOME_NET any -> $EXTERNAL_NET 53 (msg:"Suspicious DNS Query"; content:"|01 00 00 01|"; offset:2; depth:4; sid:10000003; rev:1;)
+EOF
+Step 2.3: Create Rule Management Script Template
+#!/usr/bin/env python3
+"""
+Snort Rule Manager
+Students: Complete methods for rule validation and analysis
+"""
+
+import os
+import re
+import json
+
+class SnortRuleManager:
+    def __init__(self, rules_dir="/usr/local/etc/snort/rules"):
+        self.rules_dir = rules_dir
+        self.rules = []
+    
+    def load_rules(self):
+        """
+        Load all .rules files from rules directory
+        
+        TODO: Iterate through rules directory
+        TODO: Read each .rules file
+        TODO: Parse non-comment lines
+        TODO: Store in self.rules list with metadata
+        """
+        # TODO: Implement rule loading
+        pass
+    
+    def validate_rules(self):
+        """
+        Validate rule syntax
+        
+        TODO: Check for required components:
+        - Action (alert, log, pass)
+        - Protocol (tcp, udp, icmp, ip)
+        - SID
+        - Message
+        - Balanced parentheses
+        
+        Returns:
+            Boolean indicating if all rules are valid
+        """
+        # TODO: Implement validation logic
+        pass
+    
+    def _extract_sid(self, rule):
+        """
+        Extract SID from rule string
+        
+        TODO: Use regex to find sid:XXXXX pattern
+        TODO: Return integer SID or None
+        """
+        # TODO: Implement SID extraction
+        pass
+    
+    def analyze_rules(self):
+        """
+        Analyze rule statistics
+        
+        TODO: Count rules by:
+        - Action type (alert, log, etc.)
+        - Protocol (tcp, udp, icmp)
+        - Priority levels
+        
+        Returns:
+            Dictionary with statistics
+        """
+        # TODO: Implement analysis
+        pass
+    
+    def export_report(self, filename="rule_report.json"):
+        """
+        Export analysis report to JSON
+        
+        TODO: Create report with:
+        - Total rule count
+        - Statistics by type
+        - Validation results
+        - Timestamp
+        """
+        # TODO: Implement report generation
+        pass
+
+if __name__ == "__main__":
+    manager = SnortRuleManager()
+    # TODO: Load rules
+    # TODO: Validate rules
+    # TODO: Analyze and export report
+    pass
+Task 3: Configure Elastic Stack for Log Analysis
+Step 3.1: Install Elastic Stack Components
+# Install Java
+sudo apt install -y openjdk-11-jdk
+
+# Add Elastic repository
+wget -qO - https://artifacts.elastic.co/GPG-KEY-elasticsearch | sudo apt-key add -
+echo "deb https://artifacts.elastic.co/packages/8.x/apt stable main" | sudo tee /etc/apt/sources.list.d/elastic-8.x.list
+
+# Install components
+sudo apt update
+sudo apt install -y elasticsearch kibana logstash
+Step 3.2: Configure Elasticsearch
+sudo tee /etc/elasticsearch/elasticsearch.yml > /dev/null << 'EOF'
+cluster.name: ids-lab
+node.name: ids-node
+network.host: localhost
+http.port: 9200
+discovery.type: single-node
+xpack.security.enabled: false
+EOF
+
+# Start Elasticsearch
+sudo systemctl enable elasticsearch
+sudo systemctl start elasticsearch
+
+# Wait and verify
+sleep 30
+curl -X GET "localhost:9200/"
+Step 3.3: Configure Kibana
+sudo tee /etc/kibana/kibana.yml > /dev/null << 'EOF'
+server.port: 5601
+server.host: "localhost"
+elasticsearch.hosts: ["http://localhost:9200"]
+EOF
+
+# Start Kibana
+sudo systemctl enable kibana
+sudo systemctl start kibana
+Step 3.4: Configure Logstash for IDS Logs
+sudo tee /etc/logstash/conf.d/ids.conf > /dev/null << 'EOF'
+input {
+  file {
+    path => "/var/log/snort/alert.txt"
+    start_position => "beginning"
+    type => "snort"
+  }
+  file {
+    path => "/var/log/suricata/eve.json"
+    codec => "json"
+    type => "suricata"
+  }
+}
+
+filter {
+  if [type] == "snort" {
+    grok {
+      match => { 
+        "message" => "\[%{DATA:generator_id}:%{DATA:signature_id}:%{DATA:revision}\] %{DATA:alert_msg} \[Classification: %{DATA:classification}\] \[Priority: %{DATA:priority}\]"
+      }
+    }
+  }
+}
+
+output {
+  elasticsearch {
+    hosts => ["localhost:9200"]
+    index => "ids-alerts-%{+YYYY.MM.dd}"
+  }
+}
+EOF
+
+# Start Logstash
+sudo systemctl enable logstash
+sudo systemctl start logstash
+Task 4: Generate Test Traffic and Analyze Alerts
+Step 4.1: Create Traffic Generator Script Template
+#!/usr/bin/env python3
+"""
+IDS Test Traffic Generator
+Students: Complete methods to generate various attack patterns
+"""
+
+import subprocess
+import time
+import requests
+
+class TrafficGenerator:
+    def __init__(self, target_ip="127.0.0.1"):
+        self.target_ip = target_ip
+    
+    def generate_web_attacks(self):
+        """
+        Generate web attack traffic
+        
+        TODO: Send HTTP requests with:
+        - SQL injection payloads
+        - XSS payloads
+        - Directory traversal attempts
+        
+        Use requests library or curl commands
+        """
+        # TODO: Implement SQL injection test
+        # TODO: Implement XSS test
+        # TODO: Implement directory traversal test
+        pass
+    
+    def generate_port_scan(self):
+        """
+        Generate port scanning traffic
+        
+        TODO: Use nmap or custom socket connections
+        TODO: Scan multiple ports to trigger threshold rules
+        """
+        # TODO: Implement port scan
+        pass
+    
+    def generate_icmp_sweep(self):
+        """
+        Generate ICMP ping sweep
+        
+        TODO: Send multiple ICMP echo requests
+        TODO: Use ping command or scapy library
+        """
+        # TODO: Implement ICMP sweep
+        pass
+    
+    def run_all_tests(self):
+        """
+        Execute all test scenarios
+        
+        TODO: Call all generation methods
+        TODO: Add delays between tests
+        TODO: Log test execution
+        """
+        # TODO: Implement test execution
+        pass
+
+if __name__ == "__main__":
+    generator = TrafficGenerator()
+    # TODO: Run tests
+    pass
+Step 4.2: Start IDS Systems
+# Start Snort in IDS mode
+sudo /usr/local/bin/snort -c /usr/local/etc/snort/snort.lua -i eth0 -A fast -l /var/log/snort &
+
+# Start Suricata
+sudo suricata -c /etc/suricata/suricata.yaml -i eth0 &
+
+# Verify processes are running
+ps aux | grep -E 'snort|suricata'
+Step 4.3: Generate Test Traffic
+# Simple web attack tests
+curl "http://localhost/?id=1' OR '1'='1"
+curl "http://localhost/?search=<script>alert(1)</script>"
+curl "http://localhost/../../../../etc/passwd"
+
+# Port scan test
+nmap -sS -p 1-100 localhost
+
+# ICMP test
+ping -c 10 localhost
+Step 4.4: Analyze Alerts in Kibana
+Access Kibana and create visualizations:
+
+Open browser to http://localhost:5601
+Navigate to Management > Index Patterns
+Create index pattern: ids-alerts-*
+Go to Discover to view alerts
+Create visualizations:
+Alert count over time
+Top alert types
+Source IP distribution
+Protocol breakdown
+Task 5: Compare Snort and Suricata Performance
+Step 5.1: Create Performance Comparison Script Template
+#!/usr/bin/env python3
+"""
+IDS Performance Comparator
+Students: Complete methods to compare Snort and Suricata
+"""
+
+import time
+import psutil
+import json
+
+class IDSComparator:
+    def __init__(self):
+        self.results = {
+            'snort': {},
+            'suricata': {}
+        }
+    
+    def measure_resource_usage(self, process_name):
+        """
+        Measure CPU and memory usage for IDS process
+        
+        TODO: Find process by name
+        TODO: Collect CPU percentage
+        TODO: Collect memory usage (RSS)
+        TODO: Return metrics dictionary
+        """
+        # TODO: Implement resource measurement
+        pass
+    
+    def count_alerts(self, log_file):
+        """
+        Count total alerts in log file
+        
+        TODO: Read log file
+        TODO: Count alert entries
+        TODO: Return count
+        """
+        # TODO: Implement alert counting
+        pass
+    
+    def measure_detection_rate(self):
+        """
+        Calculate detection rate for both systems
+        
+        TODO: Count true positives
+        TODO: Count false negatives
+        TODO: Calculate detection percentage
+        """
+        # TODO: Implement detection rate calculation
+        pass
+    
+    def generate_report(self):
+        """
+        Generate comparison report
+        
+        TODO: Compare resource usage
+        TODO: Compare alert counts
+        TODO: Compare detection rates
+        TODO: Export to JSON
+        """
+        # TODO: Implement report generation
+        pass
+
+if __name__ == "__main__":
+    comparator = IDSComparator()
+    # TODO: Run comparison
+    pass
+Step 5.2: Run Performance Tests
+# Monitor Snort performance
+top -p $(pgrep snort) -b -n 10 > snort_performance.txt
+
+# Monitor Suricata performance
+top -p $(pgrep suricata) -b -n 10 > suricata_performance.txt
+
+# Compare alert counts
+wc -l /var/log/snort/alert.txt
+wc -l /var/log/suricata/fast.log
+Expected Outcomes
+After completing this lab, students should have:
+
+Functional Snort and Suricata installations
+Custom detection rules for common attacks
+Python scripts for rule generation and management
+Elastic Stack configured for log analysis
+Test traffic generation capabilities
+Performance comparison data between IDS systems
+Understanding of IDS configuration and tuning
+Troubleshooting Tips
+Snort won't start:
+
+Check configuration syntax: snort -c /usr/local/etc/snort/snort.lua -T
+Verify network interface exists: ip link show
+Check file permissions on rules directory
+Elasticsearch connection failed:
+
+Verify service is running: sudo systemctl status elasticsearch
+Check port availability: netstat -tlnp | grep 9200
+Review logs: sudo tail -f /var/log/elasticsearch/ids-lab.log
+No alerts generated:
+
+Verify IDS is running: ps aux | grep snort
+Check rules are loaded: snort -c snort.lua --rule-to-text
+Ensure traffic matches rule criteria
+Verify log file permissions
+Kibana not accessible:
+
+Check service status: sudo systemctl status kibana
+Verify port 5601 is listening: netstat -tlnp | grep 5601
+Allow time for startup (can take 2-3 minutes)
+Conclusion
+This lab provided hands-on experience with two leading IDS/IPS platforms: Snort and Suricata. Students learned to install, configure, and customize detection rules using Python scripting. The integration with Elastic Stack demonstrated modern approaches to security event analysis and visualization. By comparing both systems, students gained insight into selecting appropriate IDS solutions for different network environments. These skills are essential for security operations, threat detection, and incident response roles.
+
+Key Takeaways:
+
+IDS/IPS systems require careful tuning to balance detection and false positives
+Custom rule development enables detection of organization-specific threats
+Log aggregation and visualization are critical for security monitoring
+Performance considerations impact IDS deployment decisions
+Python automation enhances security operations efficiency
