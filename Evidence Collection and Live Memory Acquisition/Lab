@@ -1,0 +1,582 @@
+Evidence Collection and Live Memory Acquisition
+Objectives
+By the end of this lab, students will be able to:
+
+Perform live memory acquisition using forensic tools
+Implement automated evidence collection workflows with Python
+Analyze memory dumps using the Volatility framework
+Document chain of custody for digital evidence
+Apply incident response procedures for evidence preservation
+Prerequisites
+Basic Linux command line proficiency
+Understanding of operating system memory concepts
+Python programming fundamentals
+Familiarity with file systems and process management
+Lab Environment
+Al Nafi provides pre-configured Linux cloud machines with all required tools installed. Click Start Lab to access your environment with:
+
+Ubuntu 22.04 LTS
+Python 3.10+ with forensic libraries
+Volatility 3 framework
+Sample memory dumps and evidence files
+Pre-installed forensic utilities
+Task 1: Setting Up the Forensic Workspace
+Step 1.1: Verify Environment and Create Directory Structure
+# Verify system and tools
+python3 --version
+vol.py --help | head -5
+
+# Create forensic workspace
+mkdir -p ~/forensic_lab/{memory_dumps,evidence,analysis,scripts,logs,reports}
+cd ~/forensic_lab
+
+# Initialize case documentation
+cat > case_info.txt << EOF
+Case ID: LAB17-$(date +%Y%m%d)
+Investigator: $(whoami)
+Start Time: $(date)
+Hostname: $(hostname)
+EOF
+Step 1.2: Create Forensic Logger
+Create a logging system to maintain chain of custody.
+
+# File: scripts/forensic_logger.py
+#!/usr/bin/env python3
+import logging
+import datetime
+import os
+
+class ForensicLogger:
+    def __init__(self, case_name="Lab17"):
+        """
+        Initialize forensic logging system.
+        
+        Args:
+            case_name: Identifier for the forensic case
+        """
+        # TODO: Set up log directory
+        # TODO: Configure logging with timestamp format
+        # TODO: Create both file and console handlers
+        pass
+    
+    def log_action(self, action, details=""):
+        """Log forensic actions with timestamp"""
+        # TODO: Implement action logging
+        pass
+    
+    def log_evidence(self, evidence_type, location, hash_value=""):
+        """Log evidence collection with hash"""
+        # TODO: Implement evidence logging
+        pass
+
+if __name__ == "__main__":
+    # TODO: Test the logger
+    pass
+Student Task: Complete the ForensicLogger class to log all forensic activities with timestamps and details.
+
+Task 2: Live Memory Acquisition
+Step 2.1: Create Memory Acquisition Script
+Develop a script to capture system memory and process information.
+
+# File: scripts/memory_acquisition.py
+#!/usr/bin/env python3
+import os
+import psutil
+import hashlib
+import datetime
+from forensic_logger import ForensicLogger
+
+class MemoryAcquisition:
+    def __init__(self):
+        """Initialize memory acquisition system"""
+        # TODO: Initialize logger
+        # TODO: Set output directory
+        # TODO: Create timestamp for this acquisition
+        pass
+    
+    def get_system_info(self):
+        """
+        Collect system information before acquisition.
+        
+        Returns:
+            dict: System information including hostname, memory, CPU
+        """
+        # TODO: Collect hostname, kernel version, architecture
+        # TODO: Get total and available memory using psutil
+        # TODO: Get CPU count and boot time
+        # TODO: Return dictionary with all information
+        pass
+    
+    def capture_process_memory(self):
+        """
+        Capture running process information.
+        
+        Returns:
+            list: List of process dictionaries with PID, name, memory
+        """
+        # TODO: Iterate through all processes using psutil
+        # TODO: Collect PID, name, memory_info, cmdline for each
+        # TODO: Handle access denied exceptions
+        # TODO: Return list of process information
+        pass
+    
+    def create_memory_snapshot(self, output_file):
+        """
+        Create memory snapshot file.
+        
+        Args:
+            output_file: Path to save memory snapshot
+            
+        Returns:
+            dict: Snapshot metadata including hash and size
+        """
+        # TODO: Write system info header to file
+        # TODO: Write process information
+        # TODO: Calculate SHA256 hash of file
+        # TODO: Return metadata dictionary
+        pass
+    
+    def calculate_hash(self, filename):
+        """Calculate SHA256 hash of file"""
+        # TODO: Open file in binary mode
+        # TODO: Read in chunks and update hash
+        # TODO: Return hexdigest
+        pass
+
+def main():
+    # TODO: Initialize MemoryAcquisition
+    # TODO: Get system information
+    # TODO: Create memory snapshot
+    # TODO: Print results and file location
+    pass
+
+if __name__ == "__main__":
+    main()
+Student Task: Complete the memory acquisition script to capture system state and process information.
+
+Step 2.2: Execute Memory Acquisition
+# Run memory acquisition
+cd ~/forensic_lab
+python3 scripts/memory_acquisition.py
+
+# Verify output
+ls -lh memory_dumps/
+sha256sum memory_dumps/*.mem
+Task 3: Automated Evidence Collection
+Step 3.1: Create Evidence Collector
+Build a comprehensive evidence collection system.
+
+# File: scripts/evidence_collector.py
+#!/usr/bin/env python3
+import os
+import shutil
+import hashlib
+import subprocess
+import json
+import datetime
+from forensic_logger import ForensicLogger
+
+class EvidenceCollector:
+    def __init__(self):
+        """Initialize evidence collection system"""
+        # TODO: Initialize logger
+        # TODO: Create case directory with timestamp
+        # TODO: Set up evidence subdirectories
+        pass
+    
+    def collect_system_logs(self):
+        """
+        Collect system log files.
+        
+        Returns:
+            list: List of collected log file metadata
+        """
+        log_files = [
+            '/var/log/syslog',
+            '/var/log/auth.log',
+            '/var/log/kern.log'
+        ]
+        
+        # TODO: Create logs subdirectory
+        # TODO: Copy each log file if it exists
+        # TODO: Calculate hash for each copied file
+        # TODO: Return list of collected file metadata
+        pass
+    
+    def collect_user_artifacts(self):
+        """
+        Collect user artifacts like bash history and SSH keys.
+        
+        Returns:
+            list: List of collected artifact metadata
+        """
+        # TODO: Collect ~/.bash_history
+        # TODO: Collect ~/.ssh/ directory contents
+        # TODO: Calculate hashes for all artifacts
+        # TODO: Return artifact metadata list
+        pass
+    
+    def collect_network_config(self):
+        """
+        Collect network configuration and state.
+        
+        Returns:
+            dict: Network configuration data
+        """
+        # TODO: Run 'ip addr show' and save output
+        # TODO: Run 'ip route show' and save output
+        # TODO: Run 'ss -tunap' for connections
+        # TODO: Return dictionary with file paths
+        pass
+    
+    def create_file_timeline(self):
+        """
+        Create timeline of recent file modifications.
+        
+        Returns:
+            str: Path to timeline file
+        """
+        # TODO: Use find command for files modified in last 7 days
+        # TODO: Save results to timeline file
+        # TODO: Return timeline file path
+        pass
+    
+    def create_manifest(self, collected_data):
+        """
+        Create JSON manifest of all collected evidence.
+        
+        Args:
+            collected_data: Dictionary of all collected evidence
+            
+        Returns:
+            str: Path to manifest file
+        """
+        # TODO: Create manifest dictionary with metadata
+        # TODO: Include collection time, hostname, collector
+        # TODO: Add summary of collected items
+        # TODO: Write to JSON file and return path
+        pass
+    
+    def run_collection(self):
+        """Execute full evidence collection workflow"""
+        # TODO: Collect system logs
+        # TODO: Collect user artifacts
+        # TODO: Collect network configuration
+        # TODO: Create file timeline
+        # TODO: Generate manifest
+        # TODO: Return case directory and manifest path
+        pass
+
+def main():
+    # TODO: Initialize EvidenceCollector
+    # TODO: Run collection workflow
+    # TODO: Display summary of collected evidence
+    pass
+
+if __name__ == "__main__":
+    main()
+Student Task: Complete the evidence collector to automate forensic data gathering with proper documentation.
+
+Step 3.2: Run Evidence Collection
+# Execute evidence collection
+python3 scripts/evidence_collector.py
+
+# Review collected evidence
+CASE_DIR=$(ls -td ~/forensic_lab/evidence/case_* | head -1)
+tree $CASE_DIR
+
+# View manifest
+cat $CASE_DIR/collection_manifest.json | python3 -m json.tool
+Task 4: Memory Analysis with Volatility
+Step 4.1: Create Volatility Analysis Script
+Analyze memory dumps using Volatility framework plugins.
+
+# File: scripts/volatility_analyzer.py
+#!/usr/bin/env python3
+import os
+import subprocess
+import json
+import datetime
+from forensic_logger import ForensicLogger
+
+class VolatilityAnalyzer:
+    def __init__(self, memory_dump_path):
+        """
+        Initialize Volatility analyzer.
+        
+        Args:
+            memory_dump_path: Path to memory dump file
+        """
+        # TODO: Verify memory dump exists
+        # TODO: Initialize logger
+        # TODO: Create analysis output directory
+        pass
+    
+    def identify_profile(self):
+        """
+        Identify the memory dump profile/OS.
+        
+        Returns:
+            str: Detected profile information
+        """
+        # TODO: Run 'vol.py -f <dump> windows.info' or 'linux.info'
+        # TODO: Parse output to identify OS and version
+        # TODO: Return profile string
+        pass
+    
+    def list_processes(self):
+        """
+        Extract process list from memory dump.
+        
+        Returns:
+            list: Process information dictionaries
+        """
+        # TODO: Run 'vol.py -f <dump> windows.pslist' or 'linux.pslist'
+        # TODO: Parse output into structured data
+        # TODO: Return list of process dictionaries
+        pass
+    
+    def scan_network_connections(self):
+        """
+        Extract network connections from memory.
+        
+        Returns:
+            list: Network connection information
+        """
+        # TODO: Run 'vol.py -f <dump> windows.netstat' or 'linux.netstat'
+        # TODO: Parse connection information
+        # TODO: Return list of connections
+        pass
+    
+    def extract_command_history(self):
+        """
+        Extract command line history from memory.
+        
+        Returns:
+            list: Command history entries
+        """
+        # TODO: Run 'vol.py -f <dump> windows.cmdline' or 'linux.bash'
+        # TODO: Parse command history
+        # TODO: Return list of commands
+        pass
+    
+    def scan_files(self):
+        """
+        Scan for file objects in memory.
+        
+        Returns:
+            list: File object information
+        """
+        # TODO: Run 'vol.py -f <dump> windows.filescan'
+        # TODO: Parse file information
+        # TODO: Return list of file objects
+        pass
+    
+    def generate_analysis_report(self, analysis_results):
+        """
+        Generate comprehensive analysis report.
+        
+        Args:
+            analysis_results: Dictionary of all analysis results
+            
+        Returns:
+            str: Path to report file
+        """
+        # TODO: Create report with all findings
+        # TODO: Include process list, network connections, files
+        # TODO: Add timestamps and metadata
+        # TODO: Save as JSON and text format
+        # TODO: Return report path
+        pass
+    
+    def run_full_analysis(self):
+        """Execute complete memory analysis workflow"""
+        # TODO: Identify profile
+        # TODO: List processes
+        # TODO: Scan network connections
+        # TODO: Extract command history
+        # TODO: Scan files
+        # TODO: Generate report
+        # TODO: Return analysis results
+        pass
+
+def main():
+    # TODO: Get memory dump path from command line or default
+    # TODO: Initialize VolatilityAnalyzer
+    # TODO: Run full analysis
+    # TODO: Display summary of findings
+    pass
+
+if __name__ == "__main__":
+    main()
+Student Task: Complete the Volatility analyzer to extract forensic artifacts from memory dumps.
+
+Step 4.2: Perform Memory Analysis
+# Analyze memory dump
+MEMORY_DUMP=$(ls -t ~/forensic_lab/memory_dumps/*.mem | head -1)
+python3 scripts/volatility_analyzer.py $MEMORY_DUMP
+
+# Review analysis results
+ls -lh ~/forensic_lab/analysis/volatility_*
+cat ~/forensic_lab/analysis/volatility_report_*.txt
+Task 5: Timeline Analysis
+Step 5.1: Create Timeline Generator
+Build a timeline of system events from collected evidence.
+
+# File: scripts/timeline_generator.py
+#!/usr/bin/env python3
+import os
+import json
+import datetime
+from collections import defaultdict
+
+class TimelineGenerator:
+    def __init__(self, evidence_dir):
+        """
+        Initialize timeline generator.
+        
+        Args:
+            evidence_dir: Directory containing collected evidence
+        """
+        # TODO: Set evidence directory
+        # TODO: Initialize timeline data structure
+        # TODO: Set output directory
+        pass
+    
+    def parse_log_files(self):
+        """
+        Parse system log files for timeline events.
+        
+        Returns:
+            list: Timeline events from logs
+        """
+        # TODO: Read syslog, auth.log, kern.log
+        # TODO: Extract timestamp, event type, message
+        # TODO: Return list of event dictionaries
+        pass
+    
+    def parse_file_timeline(self):
+        """
+        Parse file modification timeline.
+        
+        Returns:
+            list: File modification events
+        """
+        # TODO: Read file timeline data
+        # TODO: Extract file paths and timestamps
+        # TODO: Return list of file events
+        pass
+    
+    def parse_process_data(self):
+        """
+        Parse process creation events.
+        
+        Returns:
+            list: Process timeline events
+        """
+        # TODO: Read process snapshot data
+        # TODO: Extract process start times
+        # TODO: Return list of process events
+        pass
+    
+    def merge_timelines(self, *event_lists):
+        """
+        Merge multiple timeline sources and sort chronologically.
+        
+        Args:
+            *event_lists: Variable number of event lists
+            
+        Returns:
+            list: Merged and sorted timeline
+        """
+        # TODO: Combine all event lists
+        # TODO: Sort by timestamp
+        # TODO: Remove duplicates
+        # TODO: Return unified timeline
+        pass
+    
+    def generate_timeline_report(self, timeline):
+        """
+        Generate formatted timeline report.
+        
+        Args:
+            timeline: Sorted list of timeline events
+            
+        Returns:
+            str: Path to timeline report
+        """
+        # TODO: Create human-readable timeline format
+        # TODO: Group events by time period
+        # TODO: Highlight suspicious activities
+        # TODO: Save to file and return path
+        pass
+    
+    def create_timeline(self):
+        """Execute complete timeline generation"""
+        # TODO: Parse all evidence sources
+        # TODO: Merge timelines
+        # TODO: Generate report
+        # TODO: Return timeline report path
+        pass
+
+def main():
+    # TODO: Get evidence directory
+    # TODO: Initialize TimelineGenerator
+    # TODO: Create timeline
+    # TODO: Display summary
+    pass
+
+if __name__ == "__main__":
+    main()
+Student Task: Complete the timeline generator to create a chronological view of system events.
+
+Step 5.2: Generate and Review Timeline
+# Generate timeline
+EVIDENCE_DIR=$(ls -td ~/forensic_lab/evidence/case_* | head -1)
+python3 scripts/timeline_generator.py $EVIDENCE_DIR
+
+# Review timeline
+cat ~/forensic_lab/analysis/timeline_report_*.txt | less
+Expected Outcomes
+After completing this lab, you should have:
+
+Memory dumps with SHA256 hashes for integrity verification
+Evidence collection including logs, user artifacts, and network data
+Analysis results from Volatility showing processes and connections
+Timeline report showing chronological system events
+Chain of custody documentation in logs and manifests
+Verify your work:
+
+# Check all outputs
+cd ~/forensic_lab
+find . -type f -name "*.json" -o -name "*.txt" -o -name "*.mem" | head -20
+
+# Verify logging
+tail -50 logs/forensic_activity_*.log
+
+# Review case manifest
+cat evidence/case_*/collection_manifest.json | python3 -m json.tool
+Troubleshooting Tips
+Issue: Permission denied when collecting logs
+
+Solution: Some log files require sudo access. Use sudo cp or run collection script with elevated privileges where appropriate.
+Issue: Memory dump file is empty or very small
+
+Solution: Ensure sufficient disk space. Check that psutil is properly installed: pip3 install psutil
+Issue: Volatility commands fail
+
+Solution: Verify Volatility installation: vol.py --help. For simulated dumps, ensure your script handles the custom format correctly.
+Issue: Timeline has no events
+
+Solution: Check that evidence collection completed successfully. Verify log files exist in the case directory.
+Conclusion
+This lab provided hands-on experience with digital forensics evidence collection and memory analysis. You learned to:
+
+Automate evidence collection while maintaining chain of custody
+Capture live system memory and process information
+Analyze memory dumps using industry-standard tools
+Generate forensic timelines from multiple data sources
+Document all activities for legal admissibility
+These skills are essential for incident response, security investigations, and forensic analysis in enterprise environments. Continue practicing with different scenarios and memory dump types to build proficiency.
+
+Next Steps: Explore advanced Volatility plugins, practice with real-world memory samples, and study malware analysis techniques using memory forensics.
